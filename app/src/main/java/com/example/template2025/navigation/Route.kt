@@ -7,6 +7,7 @@ sealed class Route(val route: String) {
 
     // Auth internas
     data object User : Route("user")
+    data object AdminLogin : Route("adminlogin")
     data object Login : Route("login")
     data object Register : Route("register")
 

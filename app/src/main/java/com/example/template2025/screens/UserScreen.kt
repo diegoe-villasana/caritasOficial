@@ -1,6 +1,5 @@
 package com.example.template2025.screens
 
-import android.R.attr.onClick
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,7 +21,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,7 +29,11 @@ import com.example.template2025.R
 
 @Preview(showBackground = true)
 @Composable
-fun UserScreen() {
+fun UserScreen(
+    onGuestClick: () -> Unit = {},
+    onVolunteerClick: () -> Unit = {},
+    onAdminClick: () -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -71,7 +73,7 @@ fun UserScreen() {
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { /*TODO*/ },
+                onClick = onGuestClick,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
@@ -84,7 +86,7 @@ fun UserScreen() {
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { /*TODO*/ },
+                onClick = onVolunteerClick,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
@@ -97,7 +99,7 @@ fun UserScreen() {
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { /*TODO*/ },
+                onClick = onAdminClick,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier

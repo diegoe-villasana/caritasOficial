@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.composables.MainScaffold
 import com.example.template2025.navigation.Route
+import com.example.template2025.screens.AdminLoginScreen
 import com.example.template2025.screens.UserScreen
 import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.viewModel.AppViewModel
@@ -93,7 +94,15 @@ fun AuthNavHost(onLoggedIn: () -> Unit) {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = Route.User.route) {
         composable(Route.User.route) {
-            UserScreen()
+            UserScreen(
+                onAdminClick = {nav.navigate(Route.AdminLogin.route)}
+            )
+        }
+
+        composable(Route.AdminLogin.route) {
+            AdminLoginScreen(
+                onBack = { nav.popBackStack() }
+            )
         }
     }
 }

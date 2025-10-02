@@ -1,6 +1,5 @@
-package com.example.template2025
+ package com.example.template2025
 
-import android.R.attr.name
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,7 +19,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -29,9 +27,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.composables.MainScaffold
 import com.example.template2025.navigation.Route
-import com.example.template2025.screens.LoginScreen
-import com.example.template2025.screens.RegisterScreen
-import com.example.template2025.ui.theme.Template2025Theme
+import com.example.template2025.screens.UserScreen
+import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.viewModel.AppViewModel
 
 class MainActivity : ComponentActivity() {
@@ -39,7 +36,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Template2025Theme {
+            CaritasTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     AppRoot(
                         modifier = Modifier.padding(innerPadding)
@@ -94,18 +91,9 @@ fun AppRoot(modifier: Modifier = Modifier) {
 @Composable
 fun AuthNavHost(onLoggedIn: () -> Unit) {
     val nav = rememberNavController()
-    NavHost(navController = nav, startDestination = Route.Login.route) {
-        composable(Route.Login.route) {
-            LoginScreen(
-                onLogin = { onLoggedIn() },
-                onGoToRegister = { nav.navigate(Route.Register.route) }
-            )
-        }
-        composable(Route.Register.route) {
-            RegisterScreen(
-                onRegistered = { onLoggedIn() },
-                onBackToLogin = { nav.popBackStack() }
-            )
+    NavHost(navController = nav, startDestination = Route.User.route) {
+        composable(Route.User.route) {
+            UserScreen()
         }
     }
 }

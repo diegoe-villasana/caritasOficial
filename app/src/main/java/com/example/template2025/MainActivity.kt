@@ -1,6 +1,5 @@
 package com.example.template2025
 
-import android.R.attr.name
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,7 +19,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -29,10 +27,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.composables.MainScaffold
 import com.example.template2025.navigation.Route
+import com.example.template2025.screens.GuestScreen
 import com.example.template2025.screens.LoginScreen
 import com.example.template2025.screens.RegisterScreen
 import com.example.template2025.ui.theme.Template2025Theme
 import com.example.template2025.viewModel.AppViewModel
+
+// ... otras importaciones como LoginScreen, RegisterScreen, etc.
+// ...
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,13 +60,18 @@ fun AppRoot(modifier: Modifier = Modifier) {
     val vm: AppViewModel = viewModel()
     val nav = rememberNavController()
 
-    NavHost(navController = nav, startDestination = Route.Splash.route) {
+    NavHost(navController = nav, startDestination = Route.Guest.route) {
         composable(Route.Splash.route) {
             SplashScreen(
                 vm = vm,
                 nav = nav
             )
         }
+        composable(Route.Guest.route) {
+            GuestScreen()
+        }
+
+
 
         // AUTH FLOW (sin Drawer/BottomBar)
         composable(Route.Auth.route) {

@@ -13,4 +13,6 @@ sealed class Route(val route: String) {
     data object Home : Route("home")
     data object Profile : Route("profile")
     data object Settings : Route("settings")
+
+    data object Guest : Route("guest_screen")
 }

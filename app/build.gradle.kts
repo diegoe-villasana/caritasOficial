@@ -68,5 +68,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
 
+    // QR Generator
+    implementation("com.google.zxing:core:3.4.1")
+
 
 }

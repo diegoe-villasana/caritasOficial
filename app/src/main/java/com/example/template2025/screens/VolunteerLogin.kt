@@ -35,9 +35,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun VolunteerLoginScreen(
     onBack: () -> Unit = {},
-    onLogin: (email: String, password: String) -> Unit = { _, _ -> },
-    onForgotPassword: () -> Unit = {},
-    onCreateAccount: () -> Unit = {}
+    onLogin: (num_tel: String, password: String) -> Unit = { _, _ -> },
 ) {
     Box(
         modifier = Modifier
@@ -90,7 +88,7 @@ fun VolunteerLoginScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Correo o usuario") },
+                label = { Text("Número de teléfono") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
@@ -109,7 +107,7 @@ fun VolunteerLoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = { onLogin(email, password) },
+                onClick = { onLogin(email, password) }, // En realidad es num tel y password
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF003B5C)),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth(0.7f)
@@ -119,7 +117,7 @@ fun VolunteerLoginScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
+            /*Text(
                 text = "¿Olvidaste tu contraseña?",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF003B5C),
@@ -130,7 +128,7 @@ fun VolunteerLoginScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF003B5C),
                 modifier = Modifier.clickable { onCreateAccount() }
-            )
+            )*/
         }
     }
 }

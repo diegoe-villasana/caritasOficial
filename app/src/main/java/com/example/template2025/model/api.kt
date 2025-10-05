@@ -17,9 +17,22 @@ data class AdminLoginResponse(
     val token: String?
 )
 
+data class VolunteerLoginRequest(
+    @SerializedName("num_tel") val num_tel: String,
+    @SerializedName("password") val password: String
+)
+
+data class VolunteerResponse(
+    val success: Boolean,
+    val userType: String,
+    val token: String?
+)
 interface BackendApi {
     @POST("admin/login")
     suspend fun loginAdmin(@Body request: AdminLoginRequest): Response<AdminLoginResponse>
+
+    @POST("volunteer/login")
+    suspend fun loginVolunteer(@Body request: VolunteerLoginRequest): Response<VolunteerResponse>
 }
 
 object ApiClient {

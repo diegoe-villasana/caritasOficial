@@ -77,6 +77,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
                             val destination = when(credentials) {
                                 is LoginCredentials.Admin -> Route.AdminMain.route
                                 is LoginCredentials.Guest -> Route.GuestMain.route
+                                is LoginCredentials.Volunteer -> TODO()
                             }
 
                             nav.navigate(destination) {

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.template2025.dataStore.AppDataStore
 import com.example.template2025.model.AdminRepository
 import com.example.template2025.model.LoginCredentials
+import com.example.template2025.model.VolunteerRepo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,7 @@ data class AuthState(
 )
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
+    private val volunteerRepository = VolunteerRepo()
     private val dataStore = AppDataStore(app)
     private val adminRepository = AdminRepository()
     private val _auth = MutableStateFlow(AuthState())
@@ -59,6 +61,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     result.isSuccess && result.getOrThrow().success
                 }
                 is LoginCredentials.Guest -> true
+                is LoginCredentials.Volunteer -> TODO()  // Implement volunteer login logic
             }
 
             if (success) {
@@ -67,6 +70,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     when(credentials) {
                         is LoginCredentials.Admin -> "admin"
                         is LoginCredentials.Guest -> "guest"
+                        is LoginCredentials.Volunteer -> TODO() // Implement volunteer user type
                     }
                 )
             }

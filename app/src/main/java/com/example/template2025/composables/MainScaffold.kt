@@ -1,5 +1,6 @@
 package com.example.template2025.composables
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -17,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.navigation.Route
+import com.example.template2025.screens.AdminHomeScreen
 import com.example.template2025.screens.HomeScreen
 import com.example.template2025.screens.ProfileScreen
 import com.example.template2025.screens.SettingsScreen
@@ -28,7 +30,7 @@ data class BottomItem(val route: String, val label: String, val icon: ImageVecto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
+fun MainScaffold(userType: String, onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
     val nav = rememberNavController()
     val items = listOf(
         BottomItem(Route.Home.route, "Inicio", Icons.Filled.Home),
@@ -46,7 +48,7 @@ fun MainScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
                 DrawerItem(nav, label = "Inicio", dest = Route.Home.route, drawerState, scope)
                 DrawerItem(nav, label = "Perfil", dest = Route.Profile.route, drawerState, scope)
                 DrawerItem(nav, label = "Configuración", dest = Route.Settings.route, drawerState, scope)
-                Divider()
+                HorizontalDivider()
                 NavigationDrawerItem(
                     label = { Text("Cerrar sesión") },
                     selected = false,
@@ -85,9 +87,15 @@ fun MainScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
             }
         ) { innerPadding ->
             NavHost(navController = nav, startDestination = Route.Home.route, modifier = Modifier.padding(innerPadding)) {
-                composable(Route.Home.route)     { HomeScreen() }
-                composable(Route.Profile.route)  { ProfileScreen() }
-                composable(Route.Settings.route) { SettingsScreen() }
+                if (userType == "admin") {
+                    composable(Route.Home.route) { AdminHomeScreen() }
+                    composable(Route.Profile.route) { ProfileScreen() }
+                    composable(Route.Settings.route) { SettingsScreen() }
+                } else {
+                    composable(Route.Home.route) { HomeScreen() }
+                    composable(Route.Profile.route) { ProfileScreen() }
+                    composable(Route.Settings.route) { SettingsScreen() }
+                }
             }
         }
     }

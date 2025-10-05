@@ -1,7 +1,7 @@
-package com.example.template2025
+ package com.example.template2025
 
-import android.R.attr.name
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,7 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -28,10 +28,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.composables.MainScaffold
+import com.example.template2025.model.LoginCredentials
 import com.example.template2025.navigation.Route
-import com.example.template2025.screens.LoginScreen
-import com.example.template2025.screens.RegisterScreen
-import com.example.template2025.ui.theme.Template2025Theme
+import com.example.template2025.screens.AdminLoginScreen
+import com.example.template2025.screens.UserScreen
+import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.viewModel.AppViewModel
 
 class MainActivity : ComponentActivity() {
@@ -39,7 +40,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            Template2025Theme {
+            CaritasTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     AppRoot(
                         modifier = Modifier.padding(innerPadding)
@@ -57,6 +58,8 @@ fun AppRoot(modifier: Modifier = Modifier) {
     val vm: AppViewModel = viewModel()
     val nav = rememberNavController()
 
+    val context = LocalContext.current
+
     NavHost(navController = nav, startDestination = Route.Splash.route) {
         composable(Route.Splash.route) {
             SplashScreen(
@@ -68,19 +71,40 @@ fun AppRoot(modifier: Modifier = Modifier) {
         // AUTH FLOW (sin Drawer/BottomBar)
         composable(Route.Auth.route) {
             AuthNavHost(
-                onLoggedIn = {
-                    vm.login()
-                    nav.navigate(Route.Main.route) {
-                        popUpTo(Route.Splash.route) { inclusive = true }
-                        launchSingleTop = true
+                onLoggedIn = { credentials ->
+                    vm.login(credentials) {success ->
+                        if (success) {
+                            val destination = when(credentials) {
+                                is LoginCredentials.Admin -> Route.AdminMain.route
+                                is LoginCredentials.Guest -> Route.GuestMain.route
+                            }
+
+                            nav.navigate(destination) {
+                                popUpTo(Route.Splash.route) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            Toast.makeText(context, "Login failed", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                },
+                }
             )
         }
 
         // MAIN FLOW (con Scaffold + Drawer + BottomBar)
-        composable(Route.Main.route) {
+        composable(Route.GuestMain.route) {
             MainScaffold(
+                userType = "guest",
+                onLogoutClick = { vm.logout() },
+                onNavigateToAuth = {
+                    nav.navigate(Route.Auth.route) { popUpTo(0) } // limpia back stack
+                }
+            )
+        }
+
+        composable(Route.AdminMain.route) {
+            MainScaffold(
+                userType = "admin",
                 onLogoutClick = { vm.logout() },
                 onNavigateToAuth = {
                     nav.navigate(Route.Auth.route) { popUpTo(0) } // limpia back stack
@@ -92,19 +116,22 @@ fun AppRoot(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun AuthNavHost(onLoggedIn: () -> Unit) {
+fun AuthNavHost(onLoggedIn: (credentials: LoginCredentials) -> Unit) {
     val nav = rememberNavController()
-    NavHost(navController = nav, startDestination = Route.Login.route) {
-        composable(Route.Login.route) {
-            LoginScreen(
-                onLogin = { onLoggedIn() },
-                onGoToRegister = { nav.navigate(Route.Register.route) }
+    NavHost(navController = nav, startDestination = Route.User.route) {
+        composable(Route.User.route) {
+            UserScreen(
+                onAdminClick = {nav.navigate(Route.AdminLogin.route)}
             )
         }
-        composable(Route.Register.route) {
-            RegisterScreen(
-                onRegistered = { onLoggedIn() },
-                onBackToLogin = { nav.popBackStack() }
+
+        composable(Route.AdminLogin.route) {
+            AdminLoginScreen(
+                onBack = { nav.popBackStack() },
+                onLogin = { user, password ->
+                    val credentials = LoginCredentials.Admin(user, password)
+                    onLoggedIn(credentials)
+                }
             )
         }
     }
@@ -114,11 +141,26 @@ fun AuthNavHost(onLoggedIn: () -> Unit) {
 fun SplashScreen(vm: AppViewModel, nav: NavHostController) {
     val state by vm.auth.collectAsState()
 
-    LaunchedEffect(state.isLoading, state.isLoggedIn) {
+    LaunchedEffect(state.isLoading, state.isLoggedIn, state.userType) {
         if (!state.isLoading) {
             if (state.isLoggedIn) {
-                nav.navigate(Route.Main.route) {
-                    popUpTo(Route.Splash.route) { inclusive = true }
+                when (state.userType) {
+                    "admin" -> {
+                        nav.navigate(Route.AdminMain.route) {
+                            popUpTo(Route.Splash.route) { inclusive = true }
+                        }
+                    }
+                    "user" -> {
+                        nav.navigate(Route.GuestMain.route) {
+                            popUpTo(Route.Splash.route) { inclusive = true }
+                        }
+                    }
+                    else -> {
+                        // Fallback: something went wrong
+                        nav.navigate(Route.Auth.route) {
+                            popUpTo(Route.Splash.route) { inclusive = true }
+                        }
+                    }
                 }
             } else {
                 nav.navigate(Route.Auth.route) {

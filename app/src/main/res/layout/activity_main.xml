@@ -9,6 +9,6 @@
         android:id="@+id/imageView"
         android:layout_width="300dp"
         android:layout_height="300dp"
-        android:src="@drawable/logosof"
+        android:src="@drawable/caritas_logo"
         android:scaleType="fitCenter"/>
 </LinearLayout>

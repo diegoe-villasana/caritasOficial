@@ -66,7 +66,7 @@ fun AdminLoginScreen(
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {
             Image(
-                painter = painterResource(id = R.drawable.logosof),
+                painter = painterResource(id = R.drawable.caritas_logo),
                 contentDescription = null,
                 modifier = Modifier
                     .size(300.dp)

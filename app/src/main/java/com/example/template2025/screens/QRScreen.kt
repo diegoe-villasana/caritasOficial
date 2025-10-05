@@ -61,6 +61,7 @@ fun QRScreen(){
                 .background(UltraWhite)
                 .padding(top = 10.dp),
         ) {
+            // TODO: Usar valores de la reserva creada en la anterior pantalla
             TextField("Personas", "3")
             TextField("Entrada", "04-10-2025")
             TextField("Telefono", "+52 81 1111 111")
@@ -80,6 +81,7 @@ fun QRScreen(){
 
         ) {
             val qr = qrCodeGenerator("www.google.com", 200)
+            // TODO: Link de peticion en API (Verificar que es un admin)
             if (qr != null)
                 Image(
                     bitmap = qr.asImageBitmap(),

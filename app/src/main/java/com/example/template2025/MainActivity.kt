@@ -1,6 +1,7 @@
  package com.example.template2025
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +20,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -26,6 +28,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.composables.MainScaffold
+import com.example.template2025.model.LoginCredentials
 import com.example.template2025.navigation.Route
 import com.example.template2025.screens.AdminLoginScreen
 import com.example.template2025.screens.UserScreen
@@ -55,6 +58,8 @@ fun AppRoot(modifier: Modifier = Modifier) {
     val vm: AppViewModel = viewModel()
     val nav = rememberNavController()
 
+    val context = LocalContext.current
+
     NavHost(navController = nav, startDestination = Route.Splash.route) {
         composable(Route.Splash.route) {
             SplashScreen(
@@ -66,14 +71,23 @@ fun AppRoot(modifier: Modifier = Modifier) {
         // AUTH FLOW (sin Drawer/BottomBar)
         composable(Route.Auth.route) {
             AuthNavHost(
-                onLoggedIn = { userType ->
-                    vm.login(userType) // e.g., "admin" or "user"
-                    val destination = if (userType == "admin") Route.AdminMain.route else Route.GuestMain.route
-                    nav.navigate(destination) {
-                        popUpTo(Route.Splash.route) { inclusive = true }
-                        launchSingleTop = true
+                onLoggedIn = { credentials ->
+                    vm.login(credentials) {success ->
+                        if (success) {
+                            val destination = when(credentials) {
+                                is LoginCredentials.Admin -> Route.AdminMain.route
+                                is LoginCredentials.Guest -> Route.GuestMain.route
+                            }
+
+                            nav.navigate(destination) {
+                                popUpTo(Route.Splash.route) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            Toast.makeText(context, "Login failed", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                },
+                }
             )
         }
 
@@ -102,7 +116,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun AuthNavHost(onLoggedIn: (userType: String) -> Unit) {
+fun AuthNavHost(onLoggedIn: (credentials: LoginCredentials) -> Unit) {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = Route.User.route) {
         composable(Route.User.route) {
@@ -114,8 +128,9 @@ fun AuthNavHost(onLoggedIn: (userType: String) -> Unit) {
         composable(Route.AdminLogin.route) {
             AdminLoginScreen(
                 onBack = { nav.popBackStack() },
-                onLogin = {
-                    onLoggedIn("admin")
+                onLogin = { user, password ->
+                    val credentials = LoginCredentials.Admin(user, password)
+                    onLoggedIn(credentials)
                 }
             )
         }

@@ -66,9 +66,10 @@ fun AppRoot(modifier: Modifier = Modifier) {
         // AUTH FLOW (sin Drawer/BottomBar)
         composable(Route.Auth.route) {
             AuthNavHost(
-                onLoggedIn = {
-                    vm.login()
-                    nav.navigate(Route.Main.route) {
+                onLoggedIn = { userType ->
+                    vm.login(userType) // e.g., "admin" or "user"
+                    val destination = if (userType == "admin") Route.AdminMain.route else Route.GuestMain.route
+                    nav.navigate(destination) {
                         popUpTo(Route.Splash.route) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -77,8 +78,19 @@ fun AppRoot(modifier: Modifier = Modifier) {
         }
 
         // MAIN FLOW (con Scaffold + Drawer + BottomBar)
-        composable(Route.Main.route) {
+        composable(Route.GuestMain.route) {
             MainScaffold(
+                userType = "guest",
+                onLogoutClick = { vm.logout() },
+                onNavigateToAuth = {
+                    nav.navigate(Route.Auth.route) { popUpTo(0) } // limpia back stack
+                }
+            )
+        }
+
+        composable(Route.AdminMain.route) {
+            MainScaffold(
+                userType = "admin",
                 onLogoutClick = { vm.logout() },
                 onNavigateToAuth = {
                     nav.navigate(Route.Auth.route) { popUpTo(0) } // limpia back stack
@@ -90,7 +102,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun AuthNavHost(onLoggedIn: () -> Unit) {
+fun AuthNavHost(onLoggedIn: (userType: String) -> Unit) {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = Route.User.route) {
         composable(Route.User.route) {
@@ -101,7 +113,10 @@ fun AuthNavHost(onLoggedIn: () -> Unit) {
 
         composable(Route.AdminLogin.route) {
             AdminLoginScreen(
-                onBack = { nav.popBackStack() }
+                onBack = { nav.popBackStack() },
+                onLogin = {
+                    onLoggedIn("admin")
+                }
             )
         }
     }
@@ -111,11 +126,26 @@ fun AuthNavHost(onLoggedIn: () -> Unit) {
 fun SplashScreen(vm: AppViewModel, nav: NavHostController) {
     val state by vm.auth.collectAsState()
 
-    LaunchedEffect(state.isLoading, state.isLoggedIn) {
+    LaunchedEffect(state.isLoading, state.isLoggedIn, state.userType) {
         if (!state.isLoading) {
             if (state.isLoggedIn) {
-                nav.navigate(Route.Main.route) {
-                    popUpTo(Route.Splash.route) { inclusive = true }
+                when (state.userType) {
+                    "admin" -> {
+                        nav.navigate(Route.AdminMain.route) {
+                            popUpTo(Route.Splash.route) { inclusive = true }
+                        }
+                    }
+                    "user" -> {
+                        nav.navigate(Route.GuestMain.route) {
+                            popUpTo(Route.Splash.route) { inclusive = true }
+                        }
+                    }
+                    else -> {
+                        // Fallback: something went wrong
+                        nav.navigate(Route.Auth.route) {
+                            popUpTo(Route.Splash.route) { inclusive = true }
+                        }
+                    }
                 }
             } else {
                 nav.navigate(Route.Auth.route) {

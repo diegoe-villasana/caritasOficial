@@ -105,7 +105,7 @@ fun AdminLoginScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = {onLogin},
+                onClick = onLogin,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF003B5C)),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier.fillMaxWidth(0.7f)

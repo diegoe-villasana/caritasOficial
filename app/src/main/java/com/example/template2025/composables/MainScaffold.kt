@@ -89,9 +89,7 @@ fun MainScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
                 composable(Route.Home.route)     { HomeScreen(nav) }
                 composable(Route.Profile.route)  { ProfileScreen() }
                 composable(Route.Settings.route) { SettingsScreen() }
-                composable(Route.QR.route) {
-                    CameraPreviewScreen()
-                }
+                composable(Route.QR.route) { CameraPreviewScreen() }
             }
         }
     }

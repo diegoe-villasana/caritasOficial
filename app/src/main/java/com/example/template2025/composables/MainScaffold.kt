@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.navigation.Route
+import com.example.template2025.screens.CameraPreviewScreen
 import com.example.template2025.screens.HomeScreen
 import com.example.template2025.screens.ProfileScreen
 import com.example.template2025.screens.SettingsScreen
@@ -85,9 +86,12 @@ fun MainScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
             }
         ) { innerPadding ->
             NavHost(navController = nav, startDestination = Route.Home.route, modifier = Modifier.padding(innerPadding)) {
-                composable(Route.Home.route)     { HomeScreen() }
+                composable(Route.Home.route)     { HomeScreen(nav) }
                 composable(Route.Profile.route)  { ProfileScreen() }
                 composable(Route.Settings.route) { SettingsScreen() }
+                composable(Route.QR.route) {
+                    CameraPreviewScreen()
+                }
             }
         }
     }

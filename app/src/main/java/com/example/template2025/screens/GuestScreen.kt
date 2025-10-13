@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,13 +64,9 @@ fun GuestScreen() {
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Seccion 1, cabecera y seleccion de sede y fecha
             item {
-                Spacer(modifier = Modifier.height(32.dp))
-//                Image(
-  //                  painter = painterResource(id = com.example.template2025.R.drawable.logo),
-    //                contentDescription = "Logo"
-      //          )
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(56.dp))
                 Text(
                     "Nueva Reserva",
                     style = MaterialTheme.typography.headlineSmall,
@@ -185,29 +182,6 @@ fun GuestScreen() {
 
                 var personCountText by remember { mutableStateOf(uiState.personCount.toString()) }
 
-                // Número de personas
-                OutlinedTextField(
-                    value = personCountText,
-                    onValueChange = { newText ->
-                        personCountText = newText
-                            val n = newText.toIntOrNull()?.coerceIn(1, 10)
-                        if (n != null) {
-                            // Ajustar el tamaño de la lista personDetails al nuevo conteo
-                            val newList = buildList {
-                                repeat(n) { idx ->
-                                    add(uiState.personDetails.getOrNull(idx) ?: PersonInfo())
-                                }
-                            }
-                            uiState = uiState.copy(personCount = n, personDetails = newList)
-
-
-                        }
-
-                    },
-                    label = { Text("Número de personas") },
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
-                )
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
@@ -231,6 +205,37 @@ fun GuestScreen() {
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
+            // Sección 3: Conteo de Personas
+            item {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Total de Personas",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+
+                //Contador hombres
+                Counter(
+                    "Hombres",
+                    count = uiState.menCount,
+                    onCountChange = {newCount -> uiState = uiState.copy(menCount = newCount)}
+                )
+                Spacer(modifier=Modifier.height(16.dp))
+
+                //Contador Mujeres
+                Counter(
+                    "Mujeres",
+                    count = uiState.womenCount,
+                    onCountChange = {newCount -> uiState = uiState.copy(womenCount = newCount)}
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+
+            }
+
 
             item {
 
@@ -260,7 +265,9 @@ data class GuestScreenState(
     val isHeadquarterExpanded: Boolean = false,
     val personCount: Int = 1,
     val entryDate: String = "DD/MM/AAAA",
-    val personDetails: List<PersonInfo> = listOf(PersonInfo())
+    val personDetails: List<PersonInfo> = listOf(PersonInfo()),
+    val menCount: Int = 0,
+    val womenCount: Int = 0
 )
 
 @Composable
@@ -331,30 +338,71 @@ fun PersonInfoSection(
             keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth()
         )
-        DropdownField(
-            label = "Sexo",
-            selectValue = if (personInfo.gender.isEmpty()) "Seleccionar" else personInfo.gender,
-            expanded = genderExpanded,
-            onExpandedChange = { genderExpanded = it },
-            onDismissRequest = { genderExpanded = false }
-        ) {
-            genders.forEach { gender ->
-                DropdownMenuItem(
-                    text = { Text(gender) },
-                    onClick = {
-                        onPersonInfoChange(personInfo.copy(gender = gender))
-                        genderExpanded = false
-                    }
-                )
-            }
-        }
     }
 }
 
+@Composable
+fun Counter(
+    label: String,
+    count: Int,
+    onCountChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
+){
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+
+    ){
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+
+        ){
+            //Boton -
+            Button(
+                onClick = {onCountChange((count-1).coerceAtLeast(0))},
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0,59, 92), // Color de fondo personalizado (un verde azulado oscuro)
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+
+                )
+            ){
+                Text("-",style = MaterialTheme.typography.titleLarge)
+            }
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            //Boton +
+            Button(
+                onClick = {onCountChange(count+1)},
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(255,127, 50), // Color de fondo personalizado (un verde azulado oscuro)
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ){
+                Text("+",style = MaterialTheme.typography.titleLarge)
+            }
+
+
+        }
+    }
+
+}
+
+
 data class PersonInfo(
     val fullName: String = "",
-    val phone: String = "",
-    val gender: String = ""
+    val phone: String = ""
 )
 
 

@@ -2,6 +2,7 @@ package com.example.template2025.screens
 
 import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.forEach
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
@@ -25,6 +27,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
@@ -82,8 +86,8 @@ fun GuestScreen() {
 
                 // Selector de sede
                 DropdownField(
-                    label = "Sede",
-                    selectValue = uiState.selectedPosada?.name ?: "Seleccionar sede",
+                    label = "Posada",
+                    selectValue = uiState.selectedPosada?.name ?: "Seleccionar Posada",
                     expanded = uiState.isHeadquarterExpanded,
                     onExpandedChange = { expanded -> uiState = uiState.copy(isHeadquarterExpanded = expanded) },
                     onDismissRequest = { uiState = uiState.copy(isHeadquarterExpanded = false) }
@@ -138,12 +142,30 @@ fun GuestScreen() {
                     )
                 }
 
-                // El diálogo del calendario (este código ya estaba bien)
+                // El diálogo del calendario
                 if (showDatePicker) {
                     val datePickerState = rememberDatePickerState()
-                    val confirmEnabled = remember(datePickerState.selectedDateMillis) {
-                        datePickerState.selectedDateMillis != null
+                    val confirmEnabled = remember(datePickerState.selectedDateMillis) {datePickerState.selectedDateMillis != null
                     }
+
+                    // Creamos un texto dinámico para el headline
+                    val headlineText = remember(datePickerState.selectedDateMillis) {
+                        val selectedMillis = datePickerState.selectedDateMillis
+                        if (selectedMillis != null) {
+                            // Si hay una fecha seleccionada, la formateamos
+                            val selectedDate = Instant.ofEpochMilli(selectedMillis)
+                                .atZone(ZoneId.systemDefault()) // Usamos la zona horaria del dispositivo para el formato
+                                .toLocalDate()
+                            // Formato amigable como "13 oct. 2025"
+                            selectedDate.format(DateTimeFormatter.ofPattern("d MMM yyyy"))
+                        } else {
+                            // Si no, mostramos el texto por defecto
+                            "Fecha de entrada"
+                        }
+                    }
+
+                    // --- FIN DE LA MODIFICACIÓN ---
+
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
                         confirmButton = {
@@ -164,47 +186,52 @@ fun GuestScreen() {
                                 },
                                 enabled = confirmEnabled
                             ) {
-                                Text("Confirmar")
+                                Text("Aceptar") // Texto en español
                             }
                         },
                         dismissButton = {
                             Button(onClick = { showDatePicker = false }) {
-                                Text("Cancelar")
+                                Text("Cancelar") // Texto en español
                             }
                         }
                     ) {
-                        DatePicker(state = datePickerState)
+                        DatePicker(
+                            state = datePickerState,
+                            title = {
+                                Text(
+                                    "Selecciona una fecha",
+                                    modifier = Modifier.padding(start = 24.dp, top = 16.dp, end = 24.dp)
+                                )
+                            },
+                            // Usamos nuestra variable dinámica aquí
+                            headline = {
+                                Text(
+                                    headlineText,
+                                    modifier = Modifier.padding(start = 24.dp, top = 12.dp, end = 24.dp)
+                                )
+                            },
+                            showModeToggle = false
+                        )
                     }
                 }
 
 
-                Spacer(modifier = Modifier.height(16.dp))
 
-                var personCountText by remember { mutableStateOf(uiState.personCount.toString()) }
+                Spacer(modifier = Modifier.height(12.dp))
 
-
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Información del Solicitante",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
 
-            // Secciones de persona
-            items(uiState.personCount) { idx ->
+            // Sección del solicitante
+            item {
                 PersonInfoSection(
-                    personNumber = idx + 1,
-                    personInfo = uiState.personDetails[idx],
-                    onPersonInfoChange = { updated ->
-                        val newList = uiState.personDetails.toMutableList()
-                        newList[idx] = updated
-                        uiState = uiState.copy(personDetails = newList)
+                    personNumber = 1, // Siempre es la persona 1
+                    personInfo = uiState.applicantInfo,
+                    onPersonInfoChange = { updatedInfo ->
+                        uiState = uiState.copy(applicantInfo = updatedInfo)
                     }
                 )
-                Spacer(modifier = Modifier.height(16.dp))
             }
+
             // Sección 3: Conteo de Personas
             item {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -260,15 +287,7 @@ fun GuestScreen() {
     }
 }
 
-data class GuestScreenState(
-    val selectedPosada: Posadas? = null,
-    val isHeadquarterExpanded: Boolean = false,
-    val personCount: Int = 1,
-    val entryDate: String = "DD/MM/AAAA",
-    val personDetails: List<PersonInfo> = listOf(PersonInfo()),
-    val menCount: Int = 0,
-    val womenCount: Int = 0
-)
+
 
 @Composable
 fun DropdownField(
@@ -312,32 +331,72 @@ fun PersonInfoSection(
     personInfo: PersonInfo,
     onPersonInfoChange: (PersonInfo) -> Unit
 ) {
-    var genderExpanded by remember { mutableStateOf(false) }
-    val genders = listOf("Masculino", "Femenino", "Otro")
+    // No necesitamos más la lista de géneros aquí, usamos los RadioButton directamente.
 
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (personNumber > 1) {
-            Text(
-                "Información de la Persona $personNumber",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Título de la sección
+        Text(
+            text = "Información del Solicitante",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        // Campo de Nombre
         OutlinedTextField(
             value = personInfo.fullName,
             onValueChange = { onPersonInfoChange(personInfo.copy(fullName = it)) },
             label = { Text("Nombre y Apellidos") },
-            placeholder = { Text("Nombres y apellidos") },
             modifier = Modifier.fillMaxWidth()
         )
-        OutlinedTextField(
-            value = personInfo.phone,
-            onValueChange = { onPersonInfoChange(personInfo.copy(phone = it)) },
-            label = { Text("Teléfono") },
-            placeholder = { Text("+52") },
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Phone),
-            modifier = Modifier.fillMaxWidth()
+
+        // Campo de Teléfono
+        PhoneField(
+            phone = personInfo.phone,
+            onPhoneChange = { newPhone -> onPersonInfoChange(personInfo.copy(phone = newPhone)) },
+            selectedCountry = personInfo.country,
+            onCountryChange = { newCountry -> onPersonInfoChange(personInfo.copy(country = newCountry)) }
         )
+
+        // --- INICIO DE LA SECCIÓN DE RADIO BUTTONS ---
+
+        Text(
+            text = "Género",
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Opción: Hombre
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = (personInfo.gender == "Hombre"),
+                    onClick = { onPersonInfoChange(personInfo.copy(gender = "Hombre")) },
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = Color(0,156, 166), // Color de fondo personalizado (un verde azulado oscuro)
+                        unselectedColor = Color.Black
+                    )
+                )
+                Text("Hombre", modifier = Modifier.clickable { onPersonInfoChange(personInfo.copy(gender = "Hombre")) })
+            }
+
+            // Opción: Mujer
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(
+                    selected = (personInfo.gender == "Mujer"),
+                    onClick = { onPersonInfoChange(personInfo.copy(gender = "Mujer")) },
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = Color(0,156, 166), // Color de fondo personalizado (un verde azulado oscuro)
+                        unselectedColor = Color.Black
+                    )
+                )
+                Text("Mujer", modifier = Modifier.clickable { onPersonInfoChange(personInfo.copy(gender = "Mujer")) })
+            }
+        }
+        // --- FIN DE LA SECCIÓN DE RADIO BUTTONS ---
     }
 }
 
@@ -399,11 +458,99 @@ fun Counter(
 
 }
 
+@Composable
+fun PhoneField(
+    phone: String,
+    onPhoneChange: (String) -> Unit,
+    selectedCountry: Country,
+    onCountryChange: (Country) -> Unit,
+    label: String = "Teléfono"
+) {
+    val countries = remember { getCountries() }
+    var countryMenuExpanded by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = phone,
+        onValueChange = onPhoneChange,
+        label = { Text(label) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+        modifier = Modifier.fillMaxWidth(),
+        leadingIcon = {
+            // Este es el selector del código de país
+            Row(
+                modifier = Modifier
+                    .clickable { countryMenuExpanded = true }
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(selectedCountry.flag) // Bandera
+                Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+                Text(selectedCountry.dialCode) // Código (+52)
+                Icon(Icons.Default.ArrowDropDown, contentDescription = "Seleccionar país")
+
+                // Menú desplegable con la lista de países
+                DropdownMenu(
+                    expanded = countryMenuExpanded,
+                    onDismissRequest = { countryMenuExpanded = false }
+                ) {
+                    countries.forEach { country ->
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(country.flag)
+                                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                                    Text(country.name)
+                                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+                                    Text(country.dialCode, style = MaterialTheme.typography.bodySmall)
+                                }
+                            },
+                            onClick = {
+                                onCountryChange(country)
+                                countryMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    )
+}
+
+
+data class GuestScreenState(
+    val selectedPosada: Posadas? = null,
+    val isHeadquarterExpanded: Boolean = false,
+    val entryDate: String = "DD/MM/AAAA",
+    val applicantInfo: PersonInfo = PersonInfo(gender = "Hombre"), // Dato del solicitante, con un valor por defecto
+    val menCount: Int = 0,
+    val womenCount: Int = 0
+)
 
 data class PersonInfo(
     val fullName: String = "",
-    val phone: String = ""
+    val phone: String = "",
+    val gender: String = "",
+    val country: Country = Country("México", "+52", "🇲🇽")
 )
+
+data class Country(
+    val name: String,
+    val dialCode: String,
+    val flag: String // Usaremos emojis para las banderas, es lo más fácil
+)
+
+fun getCountries(): List<Country> {
+    return listOf(
+        Country("México", "+52", "🇲🇽"),
+        Country("Estados Unidos", "+1", "🇺🇸"),
+        Country("España", "+34", "🇪🇸"),
+        Country("Colombia", "+57", "🇨🇴"),
+        Country("Argentina", "+54", "🇦🇷"),
+        Country("Perú", "+51", "🇵🇪"),
+        // Puedes añadir más países aquí
+    )
+}
+
 
 
 @Preview(

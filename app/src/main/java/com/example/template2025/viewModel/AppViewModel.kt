@@ -1,6 +1,7 @@
 package com.example.template2025.viewModel
 
 import android.app.Application
+import android.util.Log.v
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.template2025.dataStore.AppDataStore
@@ -15,9 +16,10 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 data class AuthState(
-    val isLoading: Boolean = true,
+    val isLoading: Boolean = false,
     val isLoggedIn: Boolean = false,
-    val userType: String? = null
+    val userType: String? = null,
+    val error: String? = null
 )
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -42,37 +44,48 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun login(credentials: LoginCredentials, onResult: (success: Boolean) -> Unit) {
+    fun login(credentials: LoginCredentials, onResult: (success: Boolean, error: String?) -> Unit) {
         viewModelScope.launch {
-            _auth.value = _auth.value.copy(isLoading = true)
+            _auth.value = _auth.value.copy(isLoading = true, error = null)
 
-            val success = when (credentials) {
-                is LoginCredentials.Admin -> {
-                    val result = adminRepository.login(credentials.username, credentials.password)
-                    if (result.isSuccess) {
-                        val res = result.getOrThrow()
-                        dataStore.setLoggedIn(res.success)
-                        dataStore.setUserType("admin")
-                    } else {
-                        dataStore.clearSession()
+            var success = false
+            var errorMessage: String? = null
+
+            try {
+                when (credentials) {
+                    is LoginCredentials.Admin -> {
+                        val result = adminRepository.login(credentials.username, credentials.password)
+                        if (result.isSuccess) {
+                            val res = result.getOrThrow()
+                            success = res.success
+                            if (success) {
+                                dataStore.setLoggedIn(true)
+                                dataStore.setUserType("admin")
+
+                                res.token?.let { token ->
+                                    dataStore.setToken(token)
+                                }
+                            } else {
+                                errorMessage = "Usuario o contraseña incorrectos."
+                                dataStore.clearSession()
+                            }
+                        } else {
+                            success = false
+                            errorMessage = result.exceptionOrNull()?.message ?: "Ocurrió un error"
+                            dataStore.clearSession()
+                        }
+                        result.isSuccess && result.getOrThrow().success
                     }
-                    result.isSuccess && result.getOrThrow().success
+                    is LoginCredentials.Guest -> true
                 }
-                is LoginCredentials.Guest -> true
+            } catch (e: Exception) {
+                success = false
+                errorMessage = e.message ?: "Ocurrió un error crítico."
+                dataStore.clearSession()
             }
 
-            if (success) {
-                dataStore.setLoggedIn(true)
-                dataStore.setUserType(
-                    when(credentials) {
-                        is LoginCredentials.Admin -> "admin"
-                        is LoginCredentials.Guest -> "guest"
-                    }
-                )
-            }
-
-            _auth.value = _auth.value.copy(isLoading = false)
-            onResult(success)
+            _auth.value = _auth.value.copy(isLoading = false, error = errorMessage)
+            onResult(success, errorMessage)
         }
     }
 
@@ -81,4 +94,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             dataStore.clearSession()
         }
     }
+
+    fun clearError() {
+        _auth.value = _auth.value.copy(error = null)
+    }
+
 }

@@ -7,14 +7,10 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-data class AdminLoginRequest(
-    @SerializedName("user") val user: String,
-    @SerializedName("password") val password: String
-)
-data class AdminLoginResponse(
+
+data class ErrorResponse (
     val success: Boolean,
-    val userType: String,
-    val token: String?
+    val msg: String
 )
 
 interface BackendApi {

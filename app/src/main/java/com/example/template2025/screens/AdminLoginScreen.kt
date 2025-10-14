@@ -1,5 +1,6 @@
 package com.example.template2025.screens
 
+import android.R.attr.password
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,8 +16,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -37,9 +41,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.template2025.R
 
-@Preview(showBackground = true)
 @Composable
 fun AdminLoginScreen(
+    isLoading: Boolean ,
+    error: String?,
+    onErrorDismiss: () -> Unit,
     onBack: () -> Unit = {},
     onLogin: (email: String, password: String) -> Unit = { _, _ -> }
 ) {
@@ -50,7 +56,7 @@ fun AdminLoginScreen(
         contentAlignment = Alignment.Center
     ) {
         IconButton(
-            onClick = onBack,
+            onClick = { if (!isLoading) onBack() },
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 16.dp, top = 32.dp)
@@ -65,6 +71,9 @@ fun AdminLoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {
+            var user by remember { mutableStateOf("") }
+            var password by remember { mutableStateOf("") }
+
             Image(
                 painter = painterResource(id = R.drawable.caritas_logo),
                 contentDescription = null,
@@ -82,43 +91,74 @@ fun AdminLoginScreen(
                 style = MaterialTheme.typography.bodyLarge
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            var user by remember { mutableStateOf("") }
-            var password by remember { mutableStateOf("") }
-
-            OutlinedTextField(
-                value = user,
-                onValueChange = { user = it },
-                label = { Text("Usuario") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(0.8f)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            PasswordTextField(
-                password = password,
-                onPasswordChange = {password = it}
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { onLogin(user, password) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF003B5C)),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(0.7f)
+            Box(
+                contentAlignment = Alignment.Center
             ) {
-                Text(text = "Iniciar sesión", color = Color.White)
+                Column (
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.alpha(if (isLoading) 0.8f else 1f)
+                ) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        // This height should be enough for one or two lines of error text.
+                        // Adjust as needed.
+                        modifier = Modifier.height(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        error?.let { errorMessage ->
+                            Text(
+                                text = errorMessage,
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+
+                    OutlinedTextField(
+                        value = user,
+                        onValueChange = { user = it },
+                        label = { Text("Usuario") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(0.8f),
+                        enabled = !isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    PasswordTextField(
+                        password = password,
+                        onPasswordChange = { password = it },
+                        enabled = !isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (isLoading) {
+                        CircularProgressIndicator()
+                    } else {
+                        Button(
+                            onClick = {
+                                onErrorDismiss()
+                                onLogin(user, password)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF003B5C)),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth(0.7f)
+                        ) {
+                            Text(text = "Iniciar sesión", color = Color.White)
+                        }
+                    }
+                }
             }
         }
     }
-}@Composable
+}
+
+@Composable
 fun PasswordTextField(
     password: String,
     onPasswordChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    enabled: Boolean
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
 
@@ -127,7 +167,7 @@ fun PasswordTextField(
         onValueChange = onPasswordChange,
         label = { Text("Password") },
         singleLine = true,
-        modifier = modifier.fillMaxWidth(0.8f),
+        modifier = Modifier.fillMaxWidth(0.8f),
         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
             val image = if (passwordVisible)
@@ -138,6 +178,25 @@ fun PasswordTextField(
             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                 Icon(imageVector = image, contentDescription = null)
             }
-        }
+        },
+        enabled = enabled
     )
+}
+
+@Preview(showBackground = true, name = "Default State")
+@Composable
+fun AdminLoginScreenPreview() {
+    AdminLoginScreen(isLoading = false, error = null, onErrorDismiss = {})
+}
+
+@Preview(showBackground = true, name = "Loading State")
+@Composable
+fun AdminLoginScreenLoadingPreview() {
+    AdminLoginScreen(isLoading = true, error = null, onErrorDismiss = {})
+}
+
+@Preview(showBackground = true, name = "Error State")
+@Composable
+fun AdminLoginScreenErrorPreview() {
+    AdminLoginScreen(isLoading = false, error = "Usuario o contraseña incorrectos.", onErrorDismiss = {})
 }

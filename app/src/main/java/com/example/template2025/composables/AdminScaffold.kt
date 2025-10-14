@@ -2,6 +2,7 @@ package com.example.template2025.composables
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -25,18 +26,10 @@ import com.example.template2025.screens.SettingsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-
-data class BottomItem(val route: String, val label: String, val icon: ImageVector)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScaffold(userType: String, onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
+fun AdminScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
     val nav = rememberNavController()
-    val items = listOf(
-        BottomItem(Route.Home.route, "Inicio", Icons.Filled.Home),
-        BottomItem(Route.Profile.route, "Perfil", Icons.Filled.Person),
-        BottomItem(Route.Settings.route, "Config", Icons.Filled.Settings),
-    )
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -45,12 +38,13 @@ fun MainScaffold(userType: String, onLogoutClick: () -> Unit, onNavigateToAuth: 
         drawerContent = {
             ModalDrawerSheet {
                 Text("Navegación", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-                DrawerItem(nav, label = "Inicio", dest = Route.Home.route, drawerState, scope)
-                DrawerItem(nav, label = "Perfil", dest = Route.Profile.route, drawerState, scope)
-                DrawerItem(nav, label = "Configuración", dest = Route.Settings.route, drawerState, scope)
+                DrawerItem(nav, label = "Panel de control", dest = Route.AdminHome.route, drawerState, scope)
+                DrawerItem(nav, label = "Reservaciones", dest = Route.AdminReservations.route, drawerState, scope)
+                DrawerItem(nav, label = "Transporte", dest = Route.AdminTransport.route, drawerState, scope)
+                DrawerItem(nav, label = "Voluntarios", dest = Route.AdminVolunteers.route, drawerState, scope)
                 HorizontalDivider()
                 NavigationDrawerItem(
-                    label = { Text("Cerrar sesión") },
+                    label = { Text("Cerrar sesión", color = MaterialTheme.colorScheme.error) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
@@ -71,31 +65,13 @@ fun MainScaffold(userType: String, onLogoutClick: () -> Unit, onNavigateToAuth: 
                         }
                     }
                 )
-            },
-            bottomBar = {
-                NavigationBar {
-                    val current = currentRoute(nav)
-                    items.forEach { item ->
-                        NavigationBarItem(
-                            selected = current == item.route,
-                            onClick = { if (current != item.route) nav.navigate(item.route) },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) }
-                        )
-                    }
-                }
             }
         ) { innerPadding ->
-            NavHost(navController = nav, startDestination = Route.Home.route, modifier = Modifier.padding(innerPadding)) {
-                if (userType == "admin") {
-                    composable(Route.Home.route) { AdminHomeScreen() }
-                    composable(Route.Profile.route) { ProfileScreen() }
-                    composable(Route.Settings.route) { SettingsScreen() }
-                } else {
-                    composable(Route.Home.route) { HomeScreen() }
-                    composable(Route.Profile.route) { ProfileScreen() }
-                    composable(Route.Settings.route) { SettingsScreen() }
-                }
+            NavHost(navController = nav, startDestination = Route.AdminHome.route, modifier = Modifier.padding(innerPadding)) {
+                composable(Route.AdminHome.route) { AdminHomeScreen() }
+                composable(Route.AdminReservations.route) { ProfileScreen() }
+                composable(Route.AdminTransport.route) { SettingsScreen() }
+                composable(Route.AdminVolunteers.route) { SettingsScreen() }
             }
         }
     }
@@ -113,9 +89,14 @@ private fun DrawerItem(
         label = { Text(label) },
         selected = currentRoute(nav) == dest,
         onClick = {
-            nav.navigate(dest) { launchSingleTop = true }
+            nav.navigate(dest) {
+                launchSingleTop = true
+                popUpTo(nav.graph.startDestinationId) {saveState = true}
+                restoreState = true
+            }
             scope.launch { drawerState.close() }
-        }
+        },
+        shape = RoundedCornerShape(0.dp)
     )
 }
 

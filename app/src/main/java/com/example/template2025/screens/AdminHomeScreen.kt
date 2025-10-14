@@ -34,7 +34,7 @@ fun AdminHomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Text("Hello soy un Admin")
+            Text("Pantalla de administrador. WIP")
         }
     }
 }

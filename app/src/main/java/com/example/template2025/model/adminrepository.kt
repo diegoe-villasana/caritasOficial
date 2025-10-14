@@ -1,6 +1,5 @@
 package com.example.template2025.model
 
-import android.util.Log.e
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 

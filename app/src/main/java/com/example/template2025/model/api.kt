@@ -1,12 +1,10 @@
 package com.example.template2025.model
 
-import com.google.gson.annotations.SerializedName
 import retrofit2.http.Body
 import retrofit2.http.POST
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-
 
 data class ErrorResponse (
     val success: Boolean,

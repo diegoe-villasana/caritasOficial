@@ -1,7 +1,6 @@
 package com.example.template2025.viewModel
 
 import android.app.Application
-import android.util.Log.v
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.template2025.dataStore.AppDataStore
@@ -10,8 +9,6 @@ import com.example.template2025.model.LoginCredentials
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 

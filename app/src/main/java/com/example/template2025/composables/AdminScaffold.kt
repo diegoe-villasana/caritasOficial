@@ -1,17 +1,12 @@
 package com.example.template2025.composables
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -20,7 +15,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.navigation.Route
 import com.example.template2025.screens.AdminHomeScreen
-import com.example.template2025.screens.HomeScreen
 import com.example.template2025.screens.ProfileScreen
 import com.example.template2025.screens.SettingsScreen
 import kotlinx.coroutines.CoroutineScope

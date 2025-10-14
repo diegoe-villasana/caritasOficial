@@ -67,7 +67,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
             )
         }
 
-        // AUTH FLOW (sin Drawer/BottomBar)
+        // AUTH FLOW
         composable(Route.Auth.route) {
             AuthNavHost(
                 isLoading = authState.isLoading,
@@ -91,7 +91,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
             )
         }
 
-        // MAIN FLOW (con Scaffold + Drawer + BottomBar)
+        // MAIN FLOW
         composable(Route.GuestMain.route) {
             MainScaffold(
                 userType = "guest",

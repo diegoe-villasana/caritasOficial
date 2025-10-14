@@ -13,5 +13,7 @@ sealed class Route(val route: String) {
     data object Home : Route("home")
     data object Profile : Route("profile")
     data object Settings : Route("settings")
-    data object QR: Route("qr")
+    data object QRScanner: Route("qrScanner")
+
+    data object QRScreen: Route("qrScreen")
 }

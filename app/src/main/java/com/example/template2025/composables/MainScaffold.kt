@@ -20,6 +20,7 @@ import com.example.template2025.navigation.Route
 import com.example.template2025.screens.CameraPreviewScreen
 import com.example.template2025.screens.HomeScreen
 import com.example.template2025.screens.ProfileScreen
+import com.example.template2025.screens.QRScreen
 import com.example.template2025.screens.SettingsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -47,6 +48,7 @@ fun MainScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
                 DrawerItem(nav, label = "Inicio", dest = Route.Home.route, drawerState, scope)
                 DrawerItem(nav, label = "Perfil", dest = Route.Profile.route, drawerState, scope)
                 DrawerItem(nav, label = "Configuración", dest = Route.Settings.route, drawerState, scope)
+                DrawerItem(nav, label = "Escanear QR", dest = Route.QRScanner.route, drawerState, scope)
                 Divider()
                 NavigationDrawerItem(
                     label = { Text("Cerrar sesión") },
@@ -89,7 +91,8 @@ fun MainScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
                 composable(Route.Home.route)     { HomeScreen(nav) }
                 composable(Route.Profile.route)  { ProfileScreen() }
                 composable(Route.Settings.route) { SettingsScreen() }
-                composable(Route.QR.route) { CameraPreviewScreen() }
+                composable(Route.QRScanner.route) { CameraPreviewScreen() }
+                composable(Route.QRScreen.route) { QRScreen() }
             }
         }
     }

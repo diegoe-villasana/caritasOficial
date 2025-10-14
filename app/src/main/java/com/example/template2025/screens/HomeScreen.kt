@@ -17,10 +17,10 @@ fun HomeScreen(nav: NavHostController) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Pantalla de Inicio")
+            Text(text = "Pantalla de Reserva")
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { nav.navigate(Route.QR.route) }) {
-                Text("Abrir Escáner QR")
+            Button(onClick = { nav.navigate(Route.QRScreen.route) }) {
+                Text("Generar QR de Reserva")
             }
         }
     }

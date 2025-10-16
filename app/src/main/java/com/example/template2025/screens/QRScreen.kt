@@ -77,47 +77,13 @@ fun QRScreen(){
             fontSize = 20.sp
         )
 
-        Surface(
-            modifier = Modifier.size(300.dp),
-            color = UltraWhite,
-
-        ) {
-            val qr = qrCodeGenerator("www.google.com", 200)
-            // TODO: Link de peticion en API (Verificar que es un admin)
-            if (qr != null)
-                Image(
-                    bitmap = qr.asImageBitmap(),
-                    contentDescription = "QR de Reserva",
-                    contentScale = ContentScale.Fit,
-                )
-        }
     }
 }
 
 @Composable
-fun TextField(field: String, value: String){
+fun TextField(field: String, value: String) {
     Row(modifier = Modifier.padding(top = 5.dp)) {
         Text("$field: ", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Text(value, fontSize = 20.sp)
     }
-}
-
-fun qrCodeGenerator(data: String, size: Int) = try {
-    val writer = QRCodeWriter()
-    val bitMatrix: BitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, size, size)
-    val width: Int = bitMatrix.width
-    val height: Int = bitMatrix.height
-    val pixels = IntArray(width * height)
-    for (y in 0 until height) {
-        val offset = y * width
-        for (x in 0 until width) {
-            pixels[offset + x] =
-                if (bitMatrix.get(x, y)) 0xFF000000.toInt() else 0xFFFFFFFF.toInt()
-        }
-    }
-    createBitmap(width, height).apply {
-        setPixels(pixels, 0, width, 0, 0, width, height)
-    }
-} catch (e: Exception) {
-    null
 }

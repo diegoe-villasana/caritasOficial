@@ -18,6 +18,7 @@ sealed class Route(val route: String) {
     // Main Admin internas
     data object AdminHome : Route("adminhome")
     data object AdminReservations : Route("adminreservations")
+    data object AdminReservationsDetail : Route("adminreservationsdetail")
     data object AdminQR : Route("adminqr")
     data object AdminTransport : Route("admintransport")
     data object AdminVolunteers : Route("adminvolunteers")

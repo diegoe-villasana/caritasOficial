@@ -15,6 +15,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.navigation.Route
 import com.example.template2025.screens.AdminHomeScreen
+import com.example.template2025.screens.AdminReservationDetailScreen
+import com.example.template2025.screens.AdminReservationScreen
 import com.example.template2025.screens.ProfileScreen
 import com.example.template2025.screens.SettingsScreen
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +28,14 @@ fun AdminScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
     val nav = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val current = currentRoute(nav)
+    val title = when (current) {
+        Route.AdminHome.route -> "Panel de control"
+        Route.AdminReservations.route -> "Reservaciones"
+        Route.AdminTransport.route -> "Transporte"
+        Route.AdminVolunteers.route -> "Voluntarios"
+        else -> "Caritas MTY"
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -52,7 +62,7 @@ fun AdminScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Caritas MTY") },
+                    title = { Text(title) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(Icons.Filled.Menu, contentDescription = "Menu")
@@ -63,9 +73,10 @@ fun AdminScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
         ) { innerPadding ->
             NavHost(navController = nav, startDestination = Route.AdminHome.route, modifier = Modifier.padding(innerPadding)) {
                 composable(Route.AdminHome.route) { AdminHomeScreen() }
-                composable(Route.AdminReservations.route) { ProfileScreen() }
+                composable(Route.AdminReservations.route) { AdminReservationScreen(nav) }
                 composable(Route.AdminTransport.route) { SettingsScreen() }
                 composable(Route.AdminVolunteers.route) { SettingsScreen() }
+                composable(Route.AdminReservationsDetail.route) { AdminReservationDetailScreen(nav) }
             }
         }
     }

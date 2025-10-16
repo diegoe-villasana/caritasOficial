@@ -45,7 +45,7 @@ fun QRScreen(){
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center)
     {
-        Image(painter = painterResource(id = R.drawable.logosof),
+        Image(painter = painterResource(id = R.drawable.caritas_logo),
             contentDescription = "Logo Sof",
             modifier = Modifier
                 .size(200.dp)

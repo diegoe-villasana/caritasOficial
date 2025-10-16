@@ -15,7 +15,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.navigation.Route
 import com.example.template2025.screens.AdminHomeScreen
+import com.example.template2025.screens.CameraPreviewScreen
 import com.example.template2025.screens.ProfileScreen
+import com.example.template2025.screens.QRScreen
 import com.example.template2025.screens.SettingsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -36,6 +38,7 @@ fun AdminScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
                 DrawerItem(nav, label = "Reservaciones", dest = Route.AdminReservations.route, drawerState, scope)
                 DrawerItem(nav, label = "Transporte", dest = Route.AdminTransport.route, drawerState, scope)
                 DrawerItem(nav, label = "Voluntarios", dest = Route.AdminVolunteers.route, drawerState, scope)
+                DrawerItem(nav, label = "Escaner QR", dest = Route.QRScanner.route, drawerState, scope)
                 HorizontalDivider()
                 NavigationDrawerItem(
                     label = { Text("Cerrar sesión", color = MaterialTheme.colorScheme.error) },
@@ -66,6 +69,7 @@ fun AdminScaffold(onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
                 composable(Route.AdminReservations.route) { ProfileScreen() }
                 composable(Route.AdminTransport.route) { SettingsScreen() }
                 composable(Route.AdminVolunteers.route) { SettingsScreen() }
+                composable(Route.QRScanner.route) { CameraPreviewScreen() }
             }
         }
     }

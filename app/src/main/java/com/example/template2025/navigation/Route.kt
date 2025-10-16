@@ -15,4 +15,9 @@ sealed class Route(val route: String) {
     data object Settings : Route("settings")
 
     data object Guest : Route("guest_screen")
+
+    data object CheckReservation : Route("check-reservation")
+
+    data object QrCode : Route("qr/{qr_url}")
+    data object Services : Route("services")
 }

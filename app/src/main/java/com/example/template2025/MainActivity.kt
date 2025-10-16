@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.composables.MainScaffold
 import com.example.template2025.navigation.Route
+import com.example.template2025.screens.CheckReservationScreen
 import com.example.template2025.screens.GuestScreen
 import com.example.template2025.screens.LoginScreen
 import com.example.template2025.screens.RegisterScreen
@@ -67,8 +68,11 @@ fun AppRoot(modifier: Modifier = Modifier) {
                 nav = nav
             )
         }
-        composable(Route.Guest.route) {
-            GuestScreen()
+       // composable(Route.Guest.route) {
+         //   GuestScreen(navController = nav)
+        //}
+        composable(Route.CheckReservation.route) {
+            CheckReservationScreen(navController = nav)
         }
 
 

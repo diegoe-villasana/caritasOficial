@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -46,19 +48,76 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.template2025.R
 import com.example.template2025.modelInn.Posadas
 import com.example.template2025.modelInn.getPosadas
 import com.example.template2025.components.PosadasCard
+import com.example.template2025.navigation.Route
+import com.example.template2025.viewModel.AppViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.example.template2025.viewModel.GuestViewModel
+import com.example.template2025.viewModel.ReservationUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GuestScreen() {
-    var uiState by remember { mutableStateOf(GuestScreenState()) }
+fun GuestScreen(
+    navController: NavController,
+    viewModel: GuestViewModel = viewModel()
+) {
+    val uiState = viewModel.formState
+    val onStateChange : (GuestScreenState) -> Unit = {viewModel.onFormStateChange(it)}
+    val reservationState = viewModel.reservationState
     val posadasList = remember { getPosadas() }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    when(val state = reservationState){
+        is ReservationUiState.Loading ->{
+            //Mostrar indicador de carga
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+                CircularProgressIndicator()
+            }
+        }
+        is ReservationUiState.Success -> {
+            //Mostrar dialogo de éxito
+            AlertDialog(
+                onDismissRequest = {/*No hacer nada, forzar al usuario a hacer algo*/},
+                title = {Text("Reserva confirmada")},
+                text = {Text("Tu reservación con ID ${state.reservationId} ha sido creada. Se generará tu código QR")},
+                confirmButton = {
+                    Button(onClick = {
+                        // TODO: Navegar a la pantalla del qr
+                        navController.navigate("qr/${state.qrCodeUrl}")
+                        viewModel.resetReservationState()
+                    }) {
+                        Text("Ver QR")
+
+                    }
+                }
+            )
+        }
+        is ReservationUiState.Error -> {
+            //Mostrar dialogo error
+            AlertDialog(
+                onDismissRequest = {/*No hacer nada, forzar al usuario a hacer algo*/},
+                title = {Text("Error en la reservación")},
+                text = {Text(state.message)},
+                confirmButton = {
+                    Button(onClick = {viewModel.resetReservationState()}){
+                        Text("Aceptar")
+                    }
+                }
+
+            )
+        }
+        is ReservationUiState.Idle -> {
+            //No hacer nada en el estado incial
+        }
+    }
+
 
     Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
         LazyColumn(
@@ -89,17 +148,17 @@ fun GuestScreen() {
                     label = "Posada",
                     selectValue = uiState.selectedPosada?.name ?: "Seleccionar Posada",
                     expanded = uiState.isHeadquarterExpanded,
-                    onExpandedChange = { expanded -> uiState = uiState.copy(isHeadquarterExpanded = expanded) },
-                    onDismissRequest = { uiState = uiState.copy(isHeadquarterExpanded = false) }
+                    onExpandedChange = { expanded -> onStateChange(uiState.copy(isHeadquarterExpanded = expanded)) },
+                    onDismissRequest = { onStateChange(uiState.copy(isHeadquarterExpanded = false)) }
                 ) {
                     posadasList.forEach { posada ->
                         DropdownMenuItem(
                             text = { Text(posada.name) },
                             onClick = {
-                                uiState = uiState.copy(
+                                onStateChange(uiState.copy(
                                     selectedPosada = posada,
                                     isHeadquarterExpanded = false
-                                )
+                                ))
                             }
                         )
                     }
@@ -110,7 +169,6 @@ fun GuestScreen() {
                     PosadasCard(posadas = posadaSeleccionada, onItemClick = {})
                 }
 
-                var showDatePicker by remember { mutableStateOf(false) }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -177,11 +235,11 @@ fun GuestScreen() {
                                             .ofEpochMilli(millis)
                                             .atZone(ZoneId.of("UTC"))
                                             .toLocalDate()
-                                        uiState = uiState.copy(
+                                        onStateChange (uiState.copy(
                                             entryDate = selectedDate.format(
                                                 DateTimeFormatter.ofPattern("dd/MM/yyyy")
                                             )
-                                        )
+                                        ))
                                     }
                                 },
                                 enabled = confirmEnabled
@@ -227,7 +285,7 @@ fun GuestScreen() {
                     personNumber = 1, // Siempre es la persona 1
                     personInfo = uiState.applicantInfo,
                     onPersonInfoChange = { updatedInfo ->
-                        uiState = uiState.copy(applicantInfo = updatedInfo)
+                        onStateChange(uiState.copy(applicantInfo = updatedInfo))
                     }
                 )
             }
@@ -247,7 +305,7 @@ fun GuestScreen() {
                 Counter(
                     "Hombres",
                     count = uiState.menCount,
-                    onCountChange = {newCount -> uiState = uiState.copy(menCount = newCount)}
+                    onCountChange = {newCount -> onStateChange(uiState.copy(menCount = newCount))}
                 )
                 Spacer(modifier=Modifier.height(16.dp))
 
@@ -255,7 +313,7 @@ fun GuestScreen() {
                 Counter(
                     "Mujeres",
                     count = uiState.womenCount,
-                    onCountChange = {newCount -> uiState = uiState.copy(womenCount = newCount)}
+                    onCountChange = {newCount -> onStateChange(uiState.copy(womenCount = newCount))}
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -268,9 +326,9 @@ fun GuestScreen() {
 
                 Button(
                     onClick = {
-                        // TODO: Navegar a pantalla de confirmación / generar QR con uiState
-                        // uiState.selectedPosada contiene la sede
-                        // uiState.personDetails contiene la data de las personas
+                        viewModel.confirmReservation()
+                        navController.navigate(Route.Auth.route)
+
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
@@ -530,23 +588,24 @@ data class PersonInfo(
     val fullName: String = "",
     val phone: String = "",
     val gender: String = "",
-    val country: Country = Country("México", "+52", "🇲🇽")
+    val country: Country = Country("México", "+52", "🇲🇽","MX")
 )
 
 data class Country(
     val name: String,
     val dialCode: String,
-    val flag: String // Usaremos emojis para las banderas, es lo más fácil
+    val flag: String, // Usaremos emojis para las banderas, es lo más fácil
+    val isoCode: String
 )
 
 fun getCountries(): List<Country> {
     return listOf(
-        Country("México", "+52", "🇲🇽"),
-        Country("Estados Unidos", "+1", "🇺🇸"),
-        Country("España", "+34", "🇪🇸"),
-        Country("Colombia", "+57", "🇨🇴"),
-        Country("Argentina", "+54", "🇦🇷"),
-        Country("Perú", "+51", "🇵🇪"),
+        Country("México", "+52", "🇲🇽","MX"),
+        Country("Estados Unidos", "+1", "🇺🇸","US"),
+        Country("España", "+34", "🇪🇸","ES"),
+        Country("Colombia", "+57", "🇨🇴","CO"),
+        Country("Argentina", "+54", "🇦🇷","AR"),
+        Country("Perú", "+51", "🇵🇪","PE"),
         // Puedes añadir más países aquí
     )
 }
@@ -560,5 +619,5 @@ fun getCountries(): List<Country> {
 )
 @Composable
 private fun GuestScreenPreview() {
-    GuestScreen()
+    //GuestScreen(viewModel = GuestViewModel())
 }

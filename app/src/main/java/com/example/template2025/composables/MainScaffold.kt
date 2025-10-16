@@ -18,8 +18,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.navigation.Route
 import com.example.template2025.screens.AdminHomeScreen
+import com.example.template2025.screens.CameraPreviewScreen
 import com.example.template2025.screens.HomeScreen
 import com.example.template2025.screens.ProfileScreen
+import com.example.template2025.screens.QRScreen
 import com.example.template2025.screens.SettingsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -48,6 +50,8 @@ fun MainScaffold(userType: String, onLogoutClick: () -> Unit, onNavigateToAuth: 
                 DrawerItem(nav, label = "Perfil", dest = Route.Profile.route, drawerState, scope)
                 DrawerItem(nav, label = "Configuración", dest = Route.Settings.route, drawerState, scope)
                 HorizontalDivider()
+                DrawerItem(nav, label = "Escanear QR", dest = Route.QRScanner.route, drawerState, scope)
+                Divider()
                 NavigationDrawerItem(
                     label = { Text("Cerrar sesión") },
                     selected = false,

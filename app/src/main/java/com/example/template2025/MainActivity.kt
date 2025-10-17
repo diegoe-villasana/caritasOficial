@@ -61,16 +61,16 @@ fun AppRoot(modifier: Modifier = Modifier) {
     val vm: AppViewModel = viewModel()
     val nav = rememberNavController()
 
-    NavHost(navController = nav, startDestination = Route.Guest.route) {
+    NavHost(navController = nav, startDestination = Route.CheckReservation.route) {
         composable(Route.Splash.route) {
             SplashScreen(
                 vm = vm,
                 nav = nav
             )
         }
-       // composable(Route.Guest.route) {
-         //   GuestScreen(navController = nav)
-        //}
+        composable(Route.Guest.route) {
+            GuestScreen(navController = nav)
+        }
         composable(Route.CheckReservation.route) {
             CheckReservationScreen(navController = nav)
         }

@@ -30,6 +30,8 @@ import com.example.template2025.composables.MainScaffold
 import com.example.template2025.model.LoginCredentials
 import com.example.template2025.navigation.Route
 import com.example.template2025.screens.AdminLoginScreen
+import com.example.template2025.screens.CheckReservationScreen
+import com.example.template2025.screens.GuestScreen
 import com.example.template2025.screens.UserScreen
 import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.viewModel.AppViewModel

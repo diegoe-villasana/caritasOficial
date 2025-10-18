@@ -18,8 +18,6 @@ import androidx.navigation.navArgument
 import com.example.template2025.navigation.Route
 import com.example.template2025.screens.AdminHomeScreen
 import com.example.template2025.screens.CameraPreviewScreen
-import com.example.template2025.screens.ProfileScreen
-import com.example.template2025.screens.QRScreen
 import com.example.template2025.screens.AdminReservationDetailScreen
 import com.example.template2025.screens.AdminReservationScreen
 import com.example.template2025.screens.SettingsScreen

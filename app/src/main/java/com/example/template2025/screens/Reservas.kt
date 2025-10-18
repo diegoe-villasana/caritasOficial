@@ -1,20 +1,17 @@
 package com.example.template2025.screens
 
 import com.example.template2025.R
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import android.app.DatePickerDialog
 import android.widget.DatePicker
 import androidx.compose.foundation.background
-import androidx.compose.runtime.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -147,12 +144,6 @@ fun Personas(personas: String, onPersonasChange: (String) -> Unit,modifier: Modi
     )
 }
 
-
-
-
-
-
-
 @Preview(showBackground = true, widthDp = 400, heightDp = 640)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -214,7 +205,7 @@ fun reservas(){
 
 
             ){
-        Image(painter = painterResource(id = R.drawable.caritas_logo),
+        Image(painter = painterResource(id = R.drawable.logo_caritas),
             contentDescription = "Logo Sof",
             modifier = Modifier
                 .size(300.dp)

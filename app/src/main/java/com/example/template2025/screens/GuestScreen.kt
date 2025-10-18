@@ -1,8 +1,6 @@
 package com.example.template2025.screens
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.forEach
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,7 +53,6 @@ import com.example.template2025.modelInn.Posadas
 import com.example.template2025.modelInn.getPosadas
 import com.example.template2025.components.PosadasCard
 import com.example.template2025.navigation.Route
-import com.example.template2025.viewModel.AppViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter

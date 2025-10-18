@@ -3,7 +3,6 @@ package com.example.template2025.model
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 
-
 class AdminSessionExpiredException(message: String) : Exception(message)
 data class AdminLoginRequest(
     @SerializedName("user") val user: String,
@@ -161,7 +160,7 @@ class AdminRepository {
             }
         } catch (e: AdminSessionExpiredException) {
             throw e
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Result.failure(Exception("No se pudo conectar al servidor. Revisa tu conexión a internet."))
         }
     }

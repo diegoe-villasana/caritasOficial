@@ -234,7 +234,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 }.onFailure { exception ->
                     onResult(false, exception.message ?: "Ocurrió un error.")
                 }
-            } catch (e: AdminSessionExpiredException) {
+            } catch (_: AdminSessionExpiredException) {
                 logout(sessionExpired = true)
                 onResult(false, "Tu sesión ha expirado.")
             }

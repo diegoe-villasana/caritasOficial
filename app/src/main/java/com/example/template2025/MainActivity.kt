@@ -129,7 +129,8 @@ fun AuthNavHost(
     NavHost(navController = nav, startDestination = Route.User.route) {
         composable(Route.User.route) {
             UserScreen(
-                onAdminClick = {nav.navigate(Route.AdminLogin.route)}
+                onAdminClick = { nav.navigate(Route.AdminLogin.route) },
+                onGuestClick = { nav.navigate(Route.GuestLogin.route) }
             )
         }
 
@@ -144,6 +145,17 @@ fun AuthNavHost(
                     onLoggedIn(credentials)
                 }
             )
+        }
+
+        composable(Route.GuestLogin.route) {
+            CheckReservationScreen(
+                navController = nav,
+                onBack = { nav.navigateUp() }
+            )
+        }
+
+        composable(Route.Guest.route) {
+            GuestScreen(navController = nav)
         }
     }
 }

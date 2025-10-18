@@ -23,13 +23,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.template2025.R
 
-@Preview(showBackground = true)
 @Composable
 fun UserScreen(
+    error: String?,
     onGuestClick: () -> Unit = {},
     onVolunteerClick: () -> Unit = {},
     onAdminClick: () -> Unit = {}
@@ -45,7 +46,7 @@ fun UserScreen(
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             Image(
-                painter = painterResource(id = R.drawable.caritas_logo),
+                painter = painterResource(id = R.drawable.logo_caritas),
                 contentDescription = null,
                 modifier = Modifier
                     .size(300.dp)
@@ -69,6 +70,17 @@ fun UserScreen(
                 color = Color(0xFF009CA6),
                 thickness = 1.dp
             )
+
+            if (error != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 

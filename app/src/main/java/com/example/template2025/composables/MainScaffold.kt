@@ -21,6 +21,7 @@ import com.example.template2025.screens.AdminHomeScreen
 import com.example.template2025.screens.HomeScreen
 import com.example.template2025.screens.ProfileScreen
 import com.example.template2025.screens.SettingsScreen
+import com.example.template2025.viewModel.AppViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -29,7 +30,12 @@ data class BottomItem(val route: String, val label: String, val icon: ImageVecto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScaffold(userType: String, onLogoutClick: () -> Unit, onNavigateToAuth: () -> Unit) {
+fun MainScaffold(
+    vm: AppViewModel,
+    userType: String,
+    onLogoutClick: () -> Unit,
+    onNavigateToAuth: () -> Unit
+) {
     val nav = rememberNavController()
     val items = listOf(
         BottomItem(Route.Home.route, "Inicio", Icons.Filled.Home),
@@ -87,7 +93,7 @@ fun MainScaffold(userType: String, onLogoutClick: () -> Unit, onNavigateToAuth: 
         ) { innerPadding ->
             NavHost(navController = nav, startDestination = Route.Home.route, modifier = Modifier.padding(innerPadding)) {
                 if (userType == "admin") {
-                    composable(Route.Home.route) { AdminHomeScreen() }
+                    composable(Route.Home.route) { HomeScreen() }
                     composable(Route.Profile.route) { ProfileScreen() }
                     composable(Route.Settings.route) { SettingsScreen() }
                 } else {

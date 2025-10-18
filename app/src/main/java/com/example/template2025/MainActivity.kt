@@ -19,7 +19,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -56,8 +55,17 @@ class MainActivity : ComponentActivity() {
 fun AppRoot(modifier: Modifier = Modifier) {
     val vm: AppViewModel = viewModel()
     val authState by vm.auth.collectAsState()
+    val shouldNavigateToAuth by vm.navigateToAuth.collectAsState()
     val nav = rememberNavController()
-    val context = LocalContext.current
+
+    LaunchedEffect(shouldNavigateToAuth) {
+        if (shouldNavigateToAuth) {
+            nav.navigate(Route.Auth.route) {
+                popUpTo(0) { inclusive = true }
+            }
+            vm.onAuthNavigationComplete()
+        }
+    }
 
     NavHost(navController = nav, startDestination = Route.Splash.route) {
         composable(Route.Splash.route) {
@@ -94,6 +102,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
         // MAIN FLOW
         composable(Route.GuestMain.route) {
             MainScaffold(
+                vm = vm,
                 userType = "guest",
                 onLogoutClick = { vm.logout() },
                 onNavigateToAuth = {
@@ -104,6 +113,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
 
         composable(Route.AdminMain.route) {
             AdminScaffold(
+                vm = vm,
                 onLogoutClick = { vm.logout() },
                 onNavigateToAuth = {
                     nav.navigate(Route.Auth.route) { popUpTo(0) } // limpia back stack
@@ -125,7 +135,17 @@ fun AuthNavHost(
     NavHost(navController = nav, startDestination = Route.User.route) {
         composable(Route.User.route) {
             UserScreen(
-                onAdminClick = {nav.navigate(Route.AdminLogin.route)}
+                error = error,
+                onGuestClick = {
+                    onErrorDismiss()
+                },
+                onVolunteerClick = {
+                    onErrorDismiss()
+                },
+                onAdminClick = {
+                    onErrorDismiss()
+                    nav.navigate(Route.AdminLogin.route)
+                }
             )
         }
 

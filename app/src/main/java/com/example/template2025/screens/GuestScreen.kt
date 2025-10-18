@@ -122,7 +122,7 @@ fun GuestScreen(
     }
 
 
-    Scaffold(modifier = Modifier.fillMaxSize().background(Color.White)) { paddingValues ->
+    Scaffold(modifier = Modifier.fillMaxSize(), containerColor = Color.White) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)

@@ -30,13 +30,6 @@ fun Login(modifier: Modifier = Modifier){
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center)
     {
-        Image(painter = painterResource(id = R.drawable.caritas_logo),
-            contentDescription = "Logo Sof",
-            modifier = Modifier
-                .size(200.dp)
-                .padding(top = 4.dp)
-
-        )
         Spacer(modifier = Modifier.height(16.dp))
 
 

@@ -18,6 +18,8 @@ playServicesMaps = "18.1.0"
 appcompat = "1.6.1"
 constraintlayout = "2.1.4"
 roomKtx = "2.8.1"
+ui = "1.9.3"
+transportationConsumer = "4.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -38,6 +40,8 @@ play-services-maps = { group = "com.google.android.gms", name = "play-services-m
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
+transportation-consumer = { group = "com.google.android.libraries.mapsplatform.transportation", name = "transportation-consumer", version.ref = "transportationConsumer" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

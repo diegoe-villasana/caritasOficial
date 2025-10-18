@@ -8,7 +8,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.template2025.dataStore.AppDataStore
 import com.example.template2025.model.AdminRepository
+import com.example.template2025.model.AdminSessionExpiredException
+import com.example.template2025.model.ApiClient
+import com.example.template2025.model.PosadaRepository
 import com.example.template2025.model.LoginCredentials
+import com.example.template2025.model.Posada
+import com.example.template2025.model.Reserva
 import com.example.template2025.modelInn.ReservationRepository
 import com.example.template2025.screens.GuestScreenState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,13 +32,47 @@ data class AuthState(
     val error: String? = null
 )
 
+data class PosadaState(
+    val isLoading: Boolean = false,
+    val posadas: List<Posada> = emptyList(),
+    val error: String? = null
+)
+
+data class ReservaState(
+    val isLoading: Boolean = false,
+    val reservas: List<Reserva> = emptyList(),
+    val error: String? = null
+)
+
+data class ReservaDetailState(
+    val isLoading: Boolean = false,
+    val reserva: Reserva? = null,
+    val error: String? = null
+)
+
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val dataStore = AppDataStore(app)
     private val adminRepository = AdminRepository()
+    private val posadaRepository = PosadaRepository()
     private val _auth = MutableStateFlow(AuthState())
     val auth: StateFlow<AuthState> = _auth.asStateFlow()
 
+    private val _posadaState = MutableStateFlow(PosadaState())
+    val posadaState: StateFlow<PosadaState> = _posadaState.asStateFlow()
+
+    private val _reservaState = MutableStateFlow(ReservaState())
+    val reservaState: StateFlow<ReservaState> = _reservaState.asStateFlow()
+
+    private val _reservaDetailState = MutableStateFlow(ReservaDetailState())
+    val reservaDetailState: StateFlow<ReservaDetailState> = _reservaDetailState.asStateFlow()
+
+    private val _navigateToAuth = MutableStateFlow(false)
+    val navigateToAuth: StateFlow<Boolean> = _navigateToAuth.asStateFlow()
+
+
     init {
+        ApiClient.initialize(app)
+
         observeLoginFlag()
     }
 
@@ -94,16 +133,121 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun logout() {
+    fun logout(sessionExpired: Boolean = false) {
         viewModelScope.launch {
             dataStore.clearSession()
+            if (sessionExpired) {
+                _auth.value = _auth.value.copy(error = "Sesión expirada. Por favor, inicie sesión de nuevo.")
+            }
+            _navigateToAuth.value = true
         }
+    }
+
+    fun onAuthNavigationComplete() {
+        _navigateToAuth.value = false
     }
 
     fun clearError() {
         _auth.value = _auth.value.copy(error = null)
     }
 
+    fun getPosadas() {
+        viewModelScope.launch {
+            // Set loading state to true and clear previous errors
+            _posadaState.value = _posadaState.value.copy(isLoading = true, error = null)
+
+            val result = posadaRepository.getPosadas()
+
+            if (result.isSuccess) {
+                _posadaState.value = _posadaState.value.copy(
+                    isLoading = false,
+                    posadas = result.getOrThrow()
+                )
+            } else {
+                _posadaState.value = _posadaState.value.copy(
+                    isLoading = false,
+                    error = result.exceptionOrNull()?.message ?: "Error al cargar los datos."
+                )
+            }
+        }
+    }
+
+    fun getReservas() {
+        viewModelScope.launch {
+            _reservaState.value = _reservaState.value.copy(isLoading = true, error = null)
+            try {
+                val result = adminRepository.getAllReservas()
+                result.onSuccess { response ->
+                    _reservaState.value = _reservaState.value.copy(
+                        isLoading = false,
+                        reservas = response.data
+                    )
+                }.onFailure {
+                    _reservaState.value = _reservaState.value.copy(
+                        isLoading = false,
+                        error = it.message
+                    )
+                }
+            } catch (_: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
+            }
+        }
+    }
+
+    fun getReservasByPosada(posadaId: Int) {
+        viewModelScope.launch {
+            _reservaState.value = _reservaState.value.copy(isLoading = true, error = null)
+            try {
+                val result = adminRepository.getPosadaReservas(posadaId)
+                result.onSuccess { response ->
+                    _reservaState.value = _reservaState.value.copy(
+                        isLoading = false,
+                        reservas = response.data
+                    )
+                }.onFailure {
+                    _reservaState.value = _reservaState.value.copy(
+                        isLoading = false,
+                        error = it.message
+                    )
+                }
+            } catch (_: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
+            }
+        }
+    }
+
+    fun fetchReservaById(id: Int) {
+        viewModelScope.launch {
+            _reservaDetailState.value = ReservaDetailState(isLoading = true)
+            try {
+                val result = adminRepository.getReservaById(id)
+                result.onSuccess { reserva ->
+                    _reservaDetailState.value = ReservaDetailState(reserva = reserva)
+                }.onFailure { exception ->
+                    _reservaDetailState.value = ReservaDetailState(error = exception.message)
+                }
+            } catch (_: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
+            }
+        }
+    }
+
+    fun cancelReserva(id: Int, onResult: (success: Boolean, message: String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val result = adminRepository.cancelReserva(id)
+                result.onSuccess {
+                    getReservas()
+                    onResult(true, "Reserva cancelada exitosamente.")
+                }.onFailure { exception ->
+                    onResult(false, exception.message ?: "Ocurrió un error.")
+                }
+            } catch (_: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
+                onResult(false, "Tu sesión ha expirado.")
+            }
+        }
+    }
 }
 
 // 1. Estados para la UI: Carga, Éxito, Error

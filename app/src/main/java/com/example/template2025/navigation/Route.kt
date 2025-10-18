@@ -14,10 +14,11 @@ sealed class Route(val route: String) {
 
     // Main internas
     data object Home : Route("home")
-
-    // Main Admin internas
     data object AdminHome : Route("adminhome")
     data object AdminReservations : Route("adminreservations")
+    data object AdminReservationsDetail : Route("adminreservationsdetail/{reservaId}") {
+        fun createRoute(reservaId: Int) = "adminreservationsdetail/$reservaId"
+    }
     data object AdminQR : Route("adminqr")
     data object AdminTransport : Route("admintransport")
     data object AdminVolunteers : Route("adminvolunteers")

@@ -73,7 +73,7 @@ fun AdminLoginScreen(
             var password by remember { mutableStateOf("") }
 
             Image(
-                painter = painterResource(id = R.drawable.caritas_logo),
+                painter = painterResource(id = R.drawable.logo_caritas),
                 contentDescription = null,
                 modifier = Modifier
                     .size(300.dp)

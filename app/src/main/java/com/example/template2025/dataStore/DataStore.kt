@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private const val DATASTORE_NAME = "app_prefs"
@@ -36,6 +35,11 @@ class AppDataStore(private val context: Context) {
             prefs[PrefsKeys.USER_ROLE]
         }
 
+    val tokenFlow: Flow<String?> =
+        context.dataStore.data.map { prefs ->
+            prefs[PrefsKeys.TOKEN_KEY]
+        }
+
     suspend fun setUserType(value: String) {
         context.dataStore.edit { prefs ->
             prefs[PrefsKeys.USER_ROLE] = value
@@ -46,11 +50,6 @@ class AppDataStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             prefs[PrefsKeys.TOKEN_KEY] = token
         }
-    }
-
-    suspend fun getToken(): String? {
-        val prefs = context.dataStore.data.first()
-        return prefs[PrefsKeys.TOKEN_KEY]
     }
 
     suspend fun clearSession() {

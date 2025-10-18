@@ -108,7 +108,7 @@ fun AdminReservationDetailScreen(
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Sí, cancelar Reserva")
+                        Text("Sí, cancelar reserva")
                     }
 
                     Button(

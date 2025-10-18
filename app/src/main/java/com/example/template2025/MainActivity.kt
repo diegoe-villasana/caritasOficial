@@ -138,6 +138,7 @@ fun AuthNavHost(
                 error = error,
                 onGuestClick = {
                     onErrorDismiss()
+                    nav.navigate(Route.GuestLogin.route)
                 },
                 onVolunteerClick = {
                     onErrorDismiss()
@@ -160,6 +161,17 @@ fun AuthNavHost(
                     onLoggedIn(credentials)
                 }
             )
+        }
+
+        composable(Route.GuestLogin.route) {
+            CheckReservationScreen(
+                navController = nav,
+                onBack = { nav.navigateUp() }
+            )
+        }
+
+        composable(Route.Guest.route) {
+            GuestScreen(navController = nav)
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.template2025.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -26,12 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.template2025.R
 import com.example.template2025.navigation.Route
 import com.example.template2025.viewModel.CheckReservationFormState
 import com.example.template2025.viewModel.CheckReservationUiState
@@ -42,7 +47,8 @@ import java.net.URLEncoder
 @Composable
 fun CheckReservationScreen(
     navController: NavController,
-    viewModel: CheckReservationViewModel = viewModel()
+    viewModel: CheckReservationViewModel = viewModel(),
+    onBack: () -> Unit = {}
 ) {
     val formState = viewModel.formState
     val searchState = viewModel.searchState
@@ -57,13 +63,13 @@ fun CheckReservationScreen(
                 "pendiente", "confirmada" -> {
                     val encodedUrl = URLEncoder.encode(response.qrCodeUrl, "UTF-8")
                     navController.navigate("qr/$encodedUrl") {
-                        popUpTo(Route.CheckReservation.route) { inclusive = true }
+                        popUpTo(Route.GuestLogin.route) { inclusive = true }
                     }
                 }
                 // Caso 1B: QR ya usado, ir a servicios
                 "checkin" -> {
                     navController.navigate(Route.Services.route) {
-                        popUpTo(Route.CheckReservation.route) { inclusive = true }
+                        popUpTo(Route.GuestLogin.route) { inclusive = true }
                     }
                 }
             }
@@ -72,17 +78,19 @@ fun CheckReservationScreen(
             // Caso 2: No se encontró, ir a la pantalla de reserva
             navController.navigate(Route.Guest.route) {
                 // --- CORRECCIÓN 5: Paréntesis fuera de lugar ---
-                popUpTo(Route.CheckReservation.route) { inclusive = true }
+                popUpTo(Route.GuestLogin.route) { inclusive = true }
             }
         }
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = Color.White
     ) { padding ->
+
         // Usamos LazyColumn en lugar de Column para toda la pantalla
         LazyColumn(
             modifier = Modifier
+                .background(Color.White)
                 .padding(padding)
                 .fillMaxSize(),
             // Centramos horizontalmente los items por defecto, pero podemos sobreescribirlo
@@ -194,6 +202,22 @@ fun CheckReservationScreen(
                     Text("¿Primera vez? Haz una reservación", fontWeight = FontWeight.Bold,color = Color(0,156,166))
                 }
                 Spacer(Modifier.height(24.dp))
+            }
+        }
+        Box(modifier = Modifier
+            .background(Color.White),
+            contentAlignment = Alignment.Center
+        ){
+            IconButton(
+                onClick = { onBack() },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 16.dp, top = 32.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.arrow_back),
+                    contentDescription = "Back"
+                )
             }
         }
     }

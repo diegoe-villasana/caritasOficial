@@ -1,5 +1,7 @@
 package com.example.template2025.screens
 
+import android.app.DatePickerDialog
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +27,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -40,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -116,12 +120,13 @@ fun GuestScreen(
     }
 
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { paddingValues ->
+    Scaffold(modifier = Modifier.fillMaxSize(), containerColor = Color.White) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Seccion 1, cabecera y seleccion de sede y fecha
@@ -337,6 +342,22 @@ fun GuestScreen(
                 }
 
                 Spacer(modifier = Modifier.height(40.dp))
+            }
+        }
+        Box(modifier = Modifier
+            .background(Color.White),
+            contentAlignment = Alignment.Center
+        ){
+            IconButton(
+                onClick = { navController.navigateUp() },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 16.dp, top = 32.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.arrow_back),
+                    contentDescription = "Back"
+                )
             }
         }
     }
@@ -616,5 +637,5 @@ fun getCountries(): List<Country> {
 )
 @Composable
 private fun GuestScreenPreview() {
-    //GuestScreen(viewModel = GuestViewModel())
+//    GuestScreen()
 }

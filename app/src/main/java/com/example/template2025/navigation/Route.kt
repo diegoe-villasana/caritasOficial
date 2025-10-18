@@ -9,6 +9,7 @@ sealed class Route(val route: String) {
     // Auth internas
     data object User : Route("user")
     data object AdminLogin : Route("adminlogin")
+    data object GuestLogin : Route("guestlogin")
     data object Login : Route("login")
     data object Register : Route("register")
 
@@ -27,7 +28,6 @@ sealed class Route(val route: String) {
 
     data object Guest : Route("guest_screen")
 
-    data object CheckReservation : Route("check-reservation")
 
     data object QrCode : Route("qr/{qr_url}")
     data object Services : Route("services")

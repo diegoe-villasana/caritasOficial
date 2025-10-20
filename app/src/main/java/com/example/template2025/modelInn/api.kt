@@ -5,7 +5,9 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 
 
@@ -18,8 +20,12 @@ interface BackendApi {
     @POST("reservations/create")
     suspend fun createReservation(@Body request: CreateReservationRequest): Response<CreateReservationResponse>
 
-    @POST("reservations/check")
-    suspend fun checkReservation(@Body request: CheckReservationRequest): Response<CheckReservationResponse>
+    @GET("reservations/check")
+    suspend fun checkReservation(
+        @Query("nombreCompleto") fullName: String,
+        @Query("telefono") phone: String,
+        @Query("codigoPais") dialCode: String
+    ): Response<CheckReservationResponse>
 
 }
 

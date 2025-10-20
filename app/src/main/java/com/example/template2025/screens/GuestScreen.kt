@@ -92,12 +92,24 @@ fun GuestScreen(
                 text = {Text("Tu reservación con ID ${state.reservationId} ha sido creada. Se generará tu código QR")},
                 confirmButton = {
                     Button(onClick = {
-                        // TODO: Navegar a la pantalla del qr
-                        navController.navigate("qr/${state.qrCodeUrl}")
-                        viewModel.resetReservationState()
-                    }) {
-                        Text("Ver QR")
+                            state.qrCodeUrl?.let { url ->
+                                val uiState = viewModel.formState // Get the form state
+                                val totalPersonas = uiState.menCount + uiState.womenCount
+                                val telefono = "${uiState.applicantInfo.country.dialCode} ${uiState.applicantInfo.phone}"
 
+                                // Use the updated helper to build the route with all data
+                                val route = Route.QrCode.createRoute(
+                                    qrCodeUrl = url,
+                                    posada = uiState.selectedPosada?.name ?: "N/A",
+                                    personas = totalPersonas.toString(),
+                                    fecha = uiState.entryDate,
+                                    telefono = telefono
+                                )
+                            }
+                        },
+                        enabled = state.qrCodeUrl != null
+                    ) {
+                        Text("Ver QR")
                     }
                 }
             )
@@ -226,7 +238,6 @@ fun GuestScreen(
                         }
                     }
 
-                    // --- FIN DE LA MODIFICACIÓN ---
 
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
@@ -327,12 +338,9 @@ fun GuestScreen(
 
 
             item {
-
                 Button(
                     onClick = {
                         viewModel.confirmReservation()
-                        navController.navigate(Route.Auth.route)
-
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(

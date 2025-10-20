@@ -1,6 +1,7 @@
 package com.example.template2025.viewModel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
@@ -193,9 +194,10 @@ class CheckReservationViewModel : ViewModel() {
             searchState = CheckReservationUiState.Loading
             val result = repository.checkReservation(
                 fullName = formState.fullName,
-                phone = formState.phone,
-                dialCode = formState.country.dialCode
+                phone = formState.country.dialCode + formState.phone,
+                dialCode = formState.country.isoCode
             )
+            Log.d("FORM", "formState: ${formState.phone}")
             result.onSuccess { response ->
                 searchState = CheckReservationUiState.Success(response)
             }.onFailure { error ->

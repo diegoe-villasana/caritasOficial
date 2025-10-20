@@ -1,6 +1,7 @@
 package com.example.template2025.modelInn
 
 
+import android.util.Log
 import com.example.template2025.screens.GuestScreenState
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -28,7 +29,7 @@ data class CreateReservationResponse(
 data class CheckReservationResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
-    @SerializedName("estado") val reservationStatus: String?, // "pendiente", "checkin", etc.
+    @SerializedName("reservationStatus") val reservationStatus: String?, // "pendiente", "checkin", etc.
     @SerializedName("qrCodeUrl") val qrCodeUrl: String?
 )
 
@@ -75,9 +76,11 @@ class ReservationRepository {
             val response = ApiClient.api.createReservation(request)
 
             if (response.isSuccessful && response.body() != null) {
+                Log.d("API_SUCCESS", "CreateReservation successful response: ${response.body()}")
                 Result.success(response.body()!!)
             } else {
                 val errorBody = response.errorBody()?.string()
+                Log.e("API_ERROR", "CreateReservation error response: $errorBody")
                 val errorMessage = if (errorBody != null) {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).msg
                 } else {
@@ -86,6 +89,7 @@ class ReservationRepository {
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
+            Log.e("API_EXCEPTION", "Exception in createReservation", e)
             Result.failure(Exception("Error al procesar la solicitud: ${e.message}"))
         }
     }
@@ -101,11 +105,17 @@ class ReservationRepository {
                 phone = phone,
                 dialCode = dialCode
             )
-            val response = ApiClient.api.checkReservation(request)
+            val response = ApiClient.api.checkReservation(
+                fullName = fullName,
+                phone = phone,
+                dialCode = dialCode
+            )
             if (response.isSuccessful && response.body() != null) {
+                Log.d("API_SUCCESS", "CheckReservation successful response: ${response.body()}")
                 Result.success(response.body()!!)
             } else {
                 val errorBody = response.errorBody()?.string()
+                Log.e("API_ERROR", "CheckReservation error response: $errorBody")
                 val errorMessage = if (errorBody != null) {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).msg
                 } else {
@@ -114,6 +124,7 @@ class ReservationRepository {
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
+            Log.e("API_EXCEPTION", "Exception in checkReservation", e)
             Result.failure(Exception("Error de conexión: ${e.message}"))
         }
 

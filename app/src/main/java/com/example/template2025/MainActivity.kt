@@ -1,5 +1,6 @@
  package com.example.template2025
 
+import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -23,9 +24,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.template2025.composables.AdminScaffold
 import com.example.template2025.composables.MainScaffold
 import com.example.template2025.model.LoginCredentials
@@ -36,10 +39,15 @@ import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.screens.CheckReservationScreen
 import com.example.template2025.screens.GuestScreen
 import com.example.template2025.screens.LoginScreen
+import com.example.template2025.screens.QRScreen
 import com.example.template2025.screens.RegisterScreen
 import com.example.template2025.viewModel.AppViewModel
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+import androidx.core.graphics.set
+import androidx.core.graphics.createBitmap
 
-class MainActivity : ComponentActivity() {
+ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -156,6 +164,30 @@ fun AuthNavHost(
 
         composable(Route.Guest.route) {
             GuestScreen(navController = nav)
+        }
+
+        composable(
+            route = Route.QrCode.route,
+            arguments = listOf(
+                navArgument("qr_code_url") { type = NavType.StringType },
+                navArgument("posada") { type = NavType.StringType; nullable = true },
+                navArgument("personas") { type = NavType.StringType; nullable = true },
+                navArgument("fecha") { type = NavType.StringType; nullable = true },
+                navArgument("telefono") { type = NavType.StringType; nullable = true }
+            )
+        ) { backStackEntry ->
+            val qrCodeUrl = backStackEntry.arguments?.getString("qr_code_url")
+            val posada = backStackEntry.arguments?.getString("posada")
+            val personas = backStackEntry.arguments?.getString("personas")
+            val fecha = backStackEntry.arguments?.getString("fecha")
+            val telefono = backStackEntry.arguments?.getString("telefono")
+            QRScreen(
+                qrCodeUrl = qrCodeUrl,
+                posadaName = posada,
+                personCount = personas,
+                entryDate = fecha,
+                phone = telefono
+            )
         }
     }
 }

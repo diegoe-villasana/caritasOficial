@@ -14,7 +14,7 @@ import com.example.template2025.model.PosadaRepository
 import com.example.template2025.model.LoginCredentials
 import com.example.template2025.model.Posada
 import com.example.template2025.model.Reserva
-import com.example.template2025.modelInn.ReservationRepository
+import com.example.template2025.model.ReservationRepository
 import com.example.template2025.screens.GuestScreenState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
-import com.example.template2025.modelInn.CheckReservationResponse
+import com.example.template2025.model.CheckReservationResponse
 import com.example.template2025.screens.Country
 
 data class AuthState(
@@ -263,6 +263,13 @@ class GuestViewModel : ViewModel() {
     // 2. Instancia del Repositorio
     private val repository = ReservationRepository()
 
+
+    private var posadasList: List<Posada> = emptyList()
+
+
+    private var posadasCapacity: Int = 0
+
+
     // 3. Estado de la pantalla de formulario (el que ya tenías en GuestScreen)
     var formState by mutableStateOf(GuestScreenState())
         private set
@@ -272,29 +279,90 @@ class GuestViewModel : ViewModel() {
         private set
 
     // 5. Funciones para que la UI actualice el estado del formulario
+
     fun onFormStateChange(newState: GuestScreenState) {
+        if (newState.selectedPosada?.id != formState.selectedPosada?.id) {
+            val selectedPosadaData = posadasList.find{it.id == newState.selectedPosada?.id}
+            posadasCapacity = selectedPosadaData?.capacidadDisponible ?: 0
+        }
         formState = newState
+    }
+
+    private fun validateForm(): Boolean {
+        formState = formState.copy(
+            selectedPosadaError = null,
+            entryDateError = null,
+            guestCountError = null,
+            fullNameError = null,
+            phoneError = null
+        )
+        val currentState = formState
+        var isValid = true
+
+
+        // 3. Validar que haya al menos un huésped
+        if (currentState.menCount + currentState.womenCount == 0) {
+            formState = formState.copy(guestCountError = "Debe haber al menos un huésped")
+            isValid = false
+        }
+
+        // 4. Validar el nombre del solicitante
+        if (currentState.applicantInfo.fullName.isBlank()) {
+            formState = formState.copy(fullNameError = "El nombre no puede estar vacío")
+            isValid = false
+        }
+
+        // 5. Validar el teléfono del solicitante (vacío y longitud)
+        if (currentState.applicantInfo.phone.isBlank()) {
+            formState = formState.copy(phoneError = "El teléfono no puede estar vacío")
+            isValid = false
+        } else if (currentState.applicantInfo.phone.length != 10) {
+            formState = formState.copy(phoneError = "El teléfono debe tener 10 dígitos")
+            isValid = false
+        }
+
+        // 6. Validar el género del solicitante
+        if (currentState.applicantInfo.gender.isBlank()) {
+            formState = formState.copy(genderError = "Debes seleccionar un género")
+            isValid = false
+        }
+
+        return isValid
     }
 
     // 6. Se llama al presionar el botón "Confirmar reserva"
     fun confirmReservation() {
-        viewModelScope.launch {
-            // Ponemos la UI en estado de carga
-            reservationState = ReservationUiState.Loading
+// --- 1. PRIMERA VALIDACIÓN: Capacidad ---
+        val totalGuests = formState.menCount + formState.womenCount
+        // Comprobamos si hay capacidad y si el número de huéspedes la excede.
+        if (posadasCapacity > 0 && totalGuests > posadasCapacity) {
+            reservationState = ReservationUiState.Error(
+                "Reserva denegada: No hay lugares suficientes.\nDisponibles: $posadasCapacity"
+            )
+            return // Detiene la ejecución aquí
+        }
 
-            // Llamamos al repositorio con el estado actual del formulario
-            val result = repository.createReservation(formState)
+        // --- 2. SEGUNDA VALIDACIÓN: Campos del formulario ---
+        if (validateForm()) {
+            // Si el formulario es válido, procedemos con la llamada a la API.
+            viewModelScope.launch {
+                reservationState = ReservationUiState.Loading
 
-            // Procesamos el resultado
-            result.onSuccess { response ->
-                reservationState = ReservationUiState.Success(
-                    reservationId = response.reservationId,
-                    qrCodeUrl = response.qrCodeUrl
-                )
-            }.onFailure { error ->
-                // Si hubo un error, actualizamos el estado a Error
-                reservationState = ReservationUiState.Error(error.message ?: "Error desconocido")
+                val result = repository.createReservation(formState)
+
+                result.onSuccess { response ->
+                    reservationState = ReservationUiState.Success(
+                        reservationId = response.reservationId,
+                        qrCodeUrl = response.qrCodeUrl
+                    )
+                }.onFailure { error ->
+                    reservationState = ReservationUiState.Error(error.message ?: "Error desconocido")
+                }
             }
+        } else {
+            // Si validateForm() devuelve false, no hacemos nada más.
+            // La función ya se encargó de poner los mensajes de error en `formState`,
+            // y la UI reaccionará a esos cambios mostrando los campos en rojo.
         }
     }
 

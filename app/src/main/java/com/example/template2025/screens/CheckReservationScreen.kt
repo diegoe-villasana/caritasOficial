@@ -61,9 +61,7 @@ fun CheckReservationScreen(
             when (response.reservationStatus) {
                 // Caso 1A: QR pendiente, mostrar QR
                 "pendiente", "confirmada" -> {
-                    val encodedUrl = URLEncoder.encode(response.qrCodeUrl, "UTF-8")
-                    navController.navigate("qr/$encodedUrl") {
-                        popUpTo(Route.GuestLogin.route) { inclusive = true }
+                    navController.navigate(Route.QRScreen.route) {
                     }
                 }
                 // Caso 1B: QR ya usado, ir a servicios
@@ -77,7 +75,7 @@ fun CheckReservationScreen(
         if (searchState is CheckReservationUiState.Error) {
             // Caso 2: No se encontró, ir a la pantalla de reserva
             navController.navigate(Route.Guest.route) {
-                // --- CORRECCIÓN 5: Paréntesis fuera de lugar ---
+
                 popUpTo(Route.GuestLogin.route) { inclusive = true }
             }
         }

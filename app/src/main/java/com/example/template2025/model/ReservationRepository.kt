@@ -1,4 +1,5 @@
-package com.example.template2025.modelInn
+package com.example.template2025.model
+
 
 
 import com.example.template2025.screens.GuestScreenState
@@ -45,10 +46,6 @@ class ReservationRepository {
 
     suspend fun createReservation(uiState: GuestScreenState): Result<CreateReservationResponse> {
         return try {
-            //Validar que los datos necesarios no sean nulos.
-            if (uiState.selectedPosada == null) {
-                return Result.failure(Exception("Por favor, selecciona una posada."))
-            }
 
             // Formatear la fecha de DD/MM/AAAA a AAAA-MM-DD
             val inputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -61,7 +58,7 @@ class ReservationRepository {
                 "${uiState.applicantInfo.country.dialCode}${uiState.applicantInfo.phone}"
 
             val request = CreateReservationRequest(
-                posadaId = uiState.selectedPosada.id, // Usamos 'id' directamente, que ahora debe ser Int en Posadas
+                posadaId = uiState.selectedPosada?.id?:0, // Usamos 'id' directamente, que ahora debe ser Int en Posadas
                 entryDate = formattedDate,
                 menCount = uiState.menCount,
                 womenCount = uiState.womenCount,

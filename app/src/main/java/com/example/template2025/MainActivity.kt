@@ -34,9 +34,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.template2025.composables.AdminScaffold
 import com.example.template2025.composables.MainScaffold
 import com.example.template2025.model.LoginCredentials
@@ -45,6 +47,7 @@ import com.example.template2025.screens.AdminLoginScreen
 import com.example.template2025.screens.ChatScreen
 import com.example.template2025.screens.CheckReservationScreen
 import com.example.template2025.screens.GuestScreen
+import com.example.template2025.screens.QRScreen
 import com.example.template2025.screens.UserScreen
 import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.viewModel.AppViewModel
@@ -145,6 +148,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
         // AUTH FLOW
         composable(Route.Auth.route) {
             AuthNavHost(
+                vm = vm,
                 isLoading = authState.isLoading,
                 error = authState.error,
                 onErrorDismiss = { vm.clearError() },
@@ -193,6 +197,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
 
 @Composable
 fun AuthNavHost(
+    vm: AppViewModel,
     isLoading: Boolean,
     error: String?,
     onErrorDismiss: () -> Unit,
@@ -238,7 +243,7 @@ fun AuthNavHost(
         }
 
         composable(Route.Guest.route) {
-            GuestScreen(navController = nav)
+            GuestScreen(navController = nav, vm = vm)
         }
     }
 }

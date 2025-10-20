@@ -23,7 +23,8 @@ data class CreateReservationResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
     @SerializedName("reservationId") val reservationId: String?,
-    @SerializedName("qrCodeUrl") val qrCodeUrl: String? // URL para generar el QR
+    @SerializedName("qrCodeUrl") val qrCodeUrl: String?, // URL para generar el QR
+    @SerializedName("qr_token") val qr_token: String?
 )
 
 data class CheckReservationResponse(

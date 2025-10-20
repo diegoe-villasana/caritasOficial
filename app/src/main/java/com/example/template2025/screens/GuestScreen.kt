@@ -1,6 +1,7 @@
 package com.example.template2025.screens
 
 import android.app.DatePickerDialog
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.forEach
@@ -92,7 +93,7 @@ fun GuestScreen(
                 text = {Text("Tu reservación con ID ${state.reservationId} ha sido creada. Se generará tu código QR")},
                 confirmButton = {
                     Button(onClick = {
-                            state.qrCodeUrl?.let { url ->
+                            state.qr_token?.let { url ->
                                 val uiState = viewModel.formState // Get the form state
                                 val totalPersonas = uiState.menCount + uiState.womenCount
                                 val telefono = "${uiState.applicantInfo.country.dialCode} ${uiState.applicantInfo.phone}"
@@ -105,6 +106,8 @@ fun GuestScreen(
                                     fecha = uiState.entryDate,
                                     telefono = telefono
                                 )
+                                navController.navigate(route)
+                                viewModel.resetReservationState()
                             }
                         },
                         enabled = state.qrCodeUrl != null

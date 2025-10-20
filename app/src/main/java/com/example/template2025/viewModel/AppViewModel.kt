@@ -111,7 +111,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 sealed interface ReservationUiState {
     object Idle : ReservationUiState // Estado inicial
     object Loading : ReservationUiState // Estado de carga
-    data class Success(val reservationId: String?, val qrCodeUrl: String?) : ReservationUiState // Éxito
+    data class Success(val reservationId: String?, val qrCodeUrl: String?, val qr_token: String?) : ReservationUiState // Éxito
     data class Error(val message: String) : ReservationUiState // Error
 }
 
@@ -146,7 +146,8 @@ class GuestViewModel : ViewModel() {
             result.onSuccess { response ->
                 reservationState = ReservationUiState.Success(
                     reservationId = response.reservationId,
-                    qrCodeUrl = response.qrCodeUrl
+                    qrCodeUrl = response.qrCodeUrl,
+                    qr_token = response.qr_token
                 )
             }.onFailure { error ->
                 // Si hubo un error, actualizamos el estado a Error

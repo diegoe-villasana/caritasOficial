@@ -37,6 +37,7 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.journeyapps.barcodescanner.BarcodeEncoder
 import androidx.core.graphics.set
 import androidx.navigation.NavController
+import java.net.URLDecoder
 
 @Composable
 fun QRScreen(
@@ -53,6 +54,23 @@ fun QRScreen(
         } else {
             // Return a placeholder or empty bitmap if URL is null
             createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        }
+    }
+
+    val decodedPosada = remember(posadaName) {
+        try {
+            // Use "UTF-8" to match the encoding format
+            URLDecoder.decode(posadaName, "UTF-8")
+        } catch (e: Exception) {
+            posadaName ?: "No disponible" // Fallback in case of error
+        }
+    }
+
+    val decodedPhone = remember(phone) {
+        try {
+            URLDecoder.decode(phone, "UTF-8")
+        } catch (e: Exception) {
+            phone ?: "No disponible"
         }
     }
 
@@ -88,10 +106,10 @@ fun QRScreen(
                     .background(UltraWhite)
                     .padding(top = 10.dp),
             ) {
-                TextField("Posada", posadaName ?: "No disponible")
+                TextField("Posada", "+"+decodedPosada)
                 TextField("Personas", personCount ?: "N/A")
                 TextField("Entrada", entryDate ?: "No disponible")
-                TextField("Teléfono", phone ?: "No disponible")
+                TextField("Teléfono", decodedPhone)
             }
 
             Text("Muestre el siguiente código QR al momento de llegar a su estadía",

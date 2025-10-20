@@ -1,6 +1,5 @@
 package com.example.template2025.screens
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -33,9 +33,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,37 +46,50 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.template2025.R
-import com.example.template2025.modelInn.Posadas
-import com.example.template2025.modelInn.getPosadas
 import com.example.template2025.components.PosadasCard
+import com.example.template2025.model.Posada
 import com.example.template2025.navigation.Route
+import com.example.template2025.viewModel.AppViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.example.template2025.viewModel.GuestViewModel
 import com.example.template2025.viewModel.ReservationUiState
+import java.time.temporal.ChronoUnit
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GuestScreen(
     navController: NavController,
-    viewModel: GuestViewModel = viewModel()
+    vm: AppViewModel,
+    gvm: GuestViewModel = viewModel()
 ) {
-    val uiState = viewModel.formState
-    val onStateChange : (GuestScreenState) -> Unit = {viewModel.onFormStateChange(it)}
-    val reservationState = viewModel.reservationState
-    val posadasList = remember { getPosadas() }
+    val uiState = gvm.formState
+    val onStateChange : (GuestScreenState) -> Unit = {gvm.onFormStateChange(it)}
+    val reservationState = gvm.reservationState
+    val posadaState by vm.posadaState.collectAsState()
     var showDatePicker by remember { mutableStateOf(false) }
+    var selectedPosadaName by remember { mutableStateOf("") }
+
+
+    LaunchedEffect(Unit) {
+        vm.getPosadas()
+    }
+
+    LaunchedEffect(posadaState.posadas) {
+        if (posadaState.posadas.isNotEmpty() && selectedPosadaName.isEmpty()) {
+            selectedPosadaName = "Todos los albergues"
+        }
+    }
 
     when(val state = reservationState){
         is ReservationUiState.Loading ->{
@@ -90,9 +106,10 @@ fun GuestScreen(
                 text = {Text("Tu reservación con ID ${state.reservationId} ha sido creada. Se generará tu código QR")},
                 confirmButton = {
                     Button(onClick = {
-                        // TODO: Navegar a la pantalla del qr
-                        navController.navigate("qr/${state.qrCodeUrl}")
-                        viewModel.resetReservationState()
+                        navController.navigate(Route.QRScreen.route) { //TODO: Checar esta pantalla para ir a ella después de hacer merge, pues Crashea
+                            popUpTo(Route.Guest.route) { inclusive = true }
+                        }
+                        gvm.resetReservationState()
                     }) {
                         Text("Ver QR")
 
@@ -107,7 +124,7 @@ fun GuestScreen(
                 title = {Text("Error en la reservación")},
                 text = {Text(state.message)},
                 confirmButton = {
-                    Button(onClick = {viewModel.resetReservationState()}){
+                    Button(onClick = {gvm.resetReservationState()}){
                         Text("Aceptar")
                     }
                 }
@@ -129,7 +146,6 @@ fun GuestScreen(
                 .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Seccion 1, cabecera y seleccion de sede y fecha
             item {
                 Spacer(modifier = Modifier.height(56.dp))
                 Text(
@@ -148,29 +164,35 @@ fun GuestScreen(
                 // Selector de sede
                 DropdownField(
                     label = "Posada",
-                    selectValue = uiState.selectedPosada?.name ?: "Seleccionar Posada",
+                    selectValue = uiState.selectedPosada?.nombre?: "Seleccionar Posada",
                     expanded = uiState.isHeadquarterExpanded,
+                    isError = uiState.selectedPosadaError != null,
+                    supportingText = {
+                        if (uiState.selectedPosadaError != null) {
+                            Text(uiState.selectedPosadaError, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
                     onExpandedChange = { expanded -> onStateChange(uiState.copy(isHeadquarterExpanded = expanded)) },
-                    onDismissRequest = { onStateChange(uiState.copy(isHeadquarterExpanded = false)) }
-                ) {
-                    posadasList.forEach { posada ->
+                    onDismissRequest = { onStateChange(uiState.copy(isHeadquarterExpanded = false)) },
+                ){
+                    posadaState.posadas.map { posadasList ->
                         DropdownMenuItem(
-                            text = { Text(posada.name) },
+                            text = { Text(posadasList.nombre) },
                             onClick = {
                                 onStateChange(uiState.copy(
-                                    selectedPosada = posada,
+                                    selectedPosada = posadasList,
                                     isHeadquarterExpanded = false
                                 ))
                             }
                         )
-                    }
-                }
 
+                    }
+
+                }
                 uiState.selectedPosada?.let { posadaSeleccionada ->
                     Spacer(modifier = Modifier.height(16.dp))
                     PosadasCard(posadas = posadaSeleccionada, onItemClick = {})
                 }
-
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -188,7 +210,6 @@ fun GuestScreen(
                                 contentDescription = "Seleccionar fecha"
                             )
                         },
-                        // Lo hacemos que ocupe todo el ancho del Box
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -204,7 +225,13 @@ fun GuestScreen(
 
                 // El diálogo del calendario
                 if (showDatePicker) {
-                    val datePickerState = rememberDatePickerState()
+                    val datePickerState = rememberDatePickerState(
+                        selectableDates = object : SelectableDates {
+                            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                                return utcTimeMillis >= Instant.now().truncatedTo(ChronoUnit.DAYS).toEpochMilli()
+                            }
+                        }
+                    )
                     val confirmEnabled = remember(datePickerState.selectedDateMillis) {datePickerState.selectedDateMillis != null
                     }
 
@@ -224,7 +251,6 @@ fun GuestScreen(
                         }
                     }
 
-                    // --- FIN DE LA MODIFICACIÓN ---
 
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
@@ -288,7 +314,23 @@ fun GuestScreen(
                     personInfo = uiState.applicantInfo,
                     onPersonInfoChange = { updatedInfo ->
                         onStateChange(uiState.copy(applicantInfo = updatedInfo))
-                    }
+                    },
+                    onGenderChange = {oldGender, newGender ->
+                        var men = uiState.menCount
+                        var women = uiState.womenCount
+
+                        if(oldGender == "Hombre") men = (men-1).coerceAtLeast(0)
+                        if(oldGender == "Mujer") women = (women-1).coerceAtLeast(0)
+                        if(newGender == "Hombre") men++
+                        if(newGender == "Mujer") women++
+                        onStateChange(uiState.copy(
+                            applicantInfo = uiState.applicantInfo.copy(gender = newGender),
+                            menCount = men,
+                            womenCount = women
+                        ))
+                    },
+                    fullNameError = uiState.fullNameError,
+                    phoneError = uiState.phoneError,
                 )
             }
 
@@ -303,11 +345,27 @@ fun GuestScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
+                //calcular el total de guests si se ha alcanzado el limite
+                val totalGuests = uiState.menCount + uiState.womenCount
+                val capacity = vm.posadaState.value.posadas.firstOrNull()?.capacidadDisponible?: 0
+                val isCapacityReached = if(capacity > 0) totalGuests >= capacity else false
+
+
                 //Contador hombres
                 Counter(
                     "Hombres",
                     count = uiState.menCount,
-                    onCountChange = {newCount -> onStateChange(uiState.copy(menCount = newCount))}
+                    //flag para deshabilitar el boton de suma si se ha alcanzado la capacidad
+                    isIncrementEnabled = !isCapacityReached,
+                    onCountChange = {newCount ->
+                        if(newCount < uiState.menCount) {
+                            onStateChange(uiState.copy(menCount = newCount))
+                        } else{
+                            if(!isCapacityReached){
+                                onStateChange(uiState.copy(menCount = newCount))
+                            }
+                        }
+                    }
                 )
                 Spacer(modifier=Modifier.height(16.dp))
 
@@ -315,12 +373,30 @@ fun GuestScreen(
                 Counter(
                     "Mujeres",
                     count = uiState.womenCount,
-                    onCountChange = {newCount -> onStateChange(uiState.copy(womenCount = newCount))}
+                    isIncrementEnabled = !isCapacityReached,
+                    onCountChange = {newCount ->
+                        if(newCount < uiState.womenCount) {
+                            onStateChange(uiState.copy(womenCount = newCount))
+                        } else{
+                            if(!isCapacityReached){
+                                onStateChange(uiState.copy(womenCount = newCount))
+                            }
+                        }
+                    }
                 )
+                if(capacity > 0){
+                    Text(
+                        text="Capacidad disponible: $capacity",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top=8.dp),
+                        textAlign = TextAlign.Center,
+                        color = if(isCapacityReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha=0.6f)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(32.dp))
-
-
             }
 
 
@@ -328,8 +404,7 @@ fun GuestScreen(
 
                 Button(
                     onClick = {
-                        viewModel.confirmReservation()
-                        navController.navigate(Route.Auth.route)
+                        gvm.confirmReservation()
 
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -338,7 +413,17 @@ fun GuestScreen(
                         contentColor = Color.White)
 
                 ) {
-                    Text("Confirmar reserva")
+                    if(reservationState is ReservationUiState.Loading){
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    }else{
+                        Text("Confirmar reserva")
+
+                    }
+
                 }
 
                 Spacer(modifier = Modifier.height(40.dp))
@@ -370,6 +455,8 @@ fun DropdownField(
     label: String,
     selectValue: String,
     expanded: Boolean,
+    isError: Boolean,
+    supportingText: @Composable (() -> Unit)?,
     onExpandedChange: (Boolean) -> Unit,
     onDismissRequest: () -> Unit,
     dropdownContent: @Composable (ColumnScope.() -> Unit)
@@ -378,6 +465,8 @@ fun DropdownField(
         OutlinedTextField(
             value = selectValue,
             onValueChange = {},
+            isError = isError,
+            supportingText = supportingText, // <-- Pasa el parámetro aquí
             readOnly = true,
             label = { Text(label) },
             trailingIcon = {
@@ -405,7 +494,11 @@ fun DropdownField(
 fun PersonInfoSection(
     personNumber: Int,
     personInfo: PersonInfo,
-    onPersonInfoChange: (PersonInfo) -> Unit
+    onPersonInfoChange: (PersonInfo) -> Unit,
+    fullNameError: String?,
+    phoneError: String?,
+    onGenderChange: (String, String) -> Unit, // (oldGender, newGender)
+
 ) {
     // No necesitamos más la lista de géneros aquí, usamos los RadioButton directamente.
 
@@ -420,9 +513,22 @@ fun PersonInfoSection(
         // Campo de Nombre
         OutlinedTextField(
             value = personInfo.fullName,
-            onValueChange = { onPersonInfoChange(personInfo.copy(fullName = it)) },
+            onValueChange = {
+                    newValue ->
+                // Filtra para que solo acepte letras y espacios.
+                val filteredValue = newValue.filter { it.isLetter() || it.isWhitespace() }
+
+                // Limita la longitud.
+                val limitedValue = filteredValue.take(70)
+
+                // Actualiza el estado con el valor limpio.
+                onPersonInfoChange(personInfo.copy(fullName = limitedValue))
+            },
             label = { Text("Nombre y Apellidos") },
-            modifier = Modifier.fillMaxWidth()
+            isError = fullNameError != null,
+            // Puedes darle un color al texto de error
+            supportingText = { if (fullNameError != null) Text(fullNameError, color = MaterialTheme.colorScheme.error) },
+            modifier = Modifier.fillMaxWidth(),
         )
 
         // Campo de Teléfono
@@ -432,6 +538,14 @@ fun PersonInfoSection(
             selectedCountry = personInfo.country,
             onCountryChange = { newCountry -> onPersonInfoChange(personInfo.copy(country = newCountry)) }
         )
+        if (phoneError != null) {
+            Text(
+                phoneError,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
 
         // --- INICIO DE LA SECCIÓN DE RADIO BUTTONS ---
 
@@ -450,7 +564,13 @@ fun PersonInfoSection(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
                     selected = (personInfo.gender == "Hombre"),
-                    onClick = { onPersonInfoChange(personInfo.copy(gender = "Hombre")) },
+                    onClick = {
+                        val oldGender = personInfo.gender
+                        val newGender = "Hombre"
+                        if (oldGender != newGender) {
+                            onGenderChange(oldGender, newGender)
+                        }
+                    },
                     colors = RadioButtonDefaults.colors(
                         selectedColor = Color(0,156, 166), // Color de fondo personalizado (un verde azulado oscuro)
                         unselectedColor = Color.Black
@@ -463,7 +583,13 @@ fun PersonInfoSection(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
                     selected = (personInfo.gender == "Mujer"),
-                    onClick = { onPersonInfoChange(personInfo.copy(gender = "Mujer")) },
+                    onClick = {
+                        val oldGender = personInfo.gender
+                        val newGender = "Mujer"
+                        if (oldGender != newGender) {
+                            onGenderChange(oldGender, newGender)
+                        }
+                    },
                     colors = RadioButtonDefaults.colors(
                         selectedColor = Color(0,156, 166), // Color de fondo personalizado (un verde azulado oscuro)
                         unselectedColor = Color.Black
@@ -472,7 +598,6 @@ fun PersonInfoSection(
                 Text("Mujer", modifier = Modifier.clickable { onPersonInfoChange(personInfo.copy(gender = "Mujer")) })
             }
         }
-        // --- FIN DE LA SECCIÓN DE RADIO BUTTONS ---
     }
 }
 
@@ -481,7 +606,8 @@ fun Counter(
     label: String,
     count: Int,
     onCountChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isIncrementEnabled: Boolean = true
 ){
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -519,10 +645,12 @@ fun Counter(
             //Boton +
             Button(
                 onClick = {onCountChange(count+1)},
+                enabled = isIncrementEnabled,
                 shape = MaterialTheme.shapes.small,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(255,127, 50), // Color de fondo personalizado (un verde azulado oscuro)
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = Color(255,127,50).copy(alpha=0.5f)
                 )
             ){
                 Text("+",style = MaterialTheme.typography.titleLarge)
@@ -547,9 +675,17 @@ fun PhoneField(
 
     OutlinedTextField(
         value = phone,
-        onValueChange = onPhoneChange,
+        onValueChange = {
+            newValue ->
+            //Filtra para que solo contenga digitos
+            val filteredValue = newValue.filter { it.isDigit() }
+            //Limita la longitud a 10 chars
+            val limitedValue = filteredValue.take(10)
+            //Llama al evento onPhoneChange con el valor limpio
+            onPhoneChange(limitedValue)
+        },
         label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = {
             // Este es el selector del código de país
@@ -594,13 +730,21 @@ fun PhoneField(
 
 
 data class GuestScreenState(
-    val selectedPosada: Posadas? = null,
+    val selectedPosada: Posada? = null,
     val isHeadquarterExpanded: Boolean = false,
     val entryDate: String = "DD/MM/AAAA",
     val applicantInfo: PersonInfo = PersonInfo(gender = "Hombre"), // Dato del solicitante, con un valor por defecto
-    val menCount: Int = 0,
-    val womenCount: Int = 0
+    val menCount: Int = 1,
+    val womenCount: Int = 0,
+    //CAMPOS PARA LOS ERRORES
+    val selectedPosadaError: String? = null,
+    val entryDateError: String? = null,
+    val guestCountError: String? = null,
+    val fullNameError: String? = null,
+    val phoneError: String? = null,
+    val genderError: String? = null
 )
+
 
 data class PersonInfo(
     val fullName: String = "",
@@ -629,13 +773,5 @@ fun getCountries(): List<Country> {
 }
 
 
+//@Preview(showBackground = true, widthDp = 360, heightDp = 640)
 
-@Preview(
-    showBackground = true, // Muestra un fondo blanco para el componente
-    device = "id:pixel_6"  // Simula el tamaño de un dispositivo específico (opcional pero útil)
-
-)
-@Composable
-private fun GuestScreenPreview() {
-//    GuestScreen()
-}

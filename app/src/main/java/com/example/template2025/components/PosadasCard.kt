@@ -22,13 +22,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.template2025.modelInn.Posadas
+import com.example.template2025.model.Posada
 import coil3.compose.AsyncImage
 
 @Composable
 fun PosadasCard(
-    posadas : Posadas,
-    onItemClick :(Posadas) -> Unit
+    posadas : Posada,
+    onItemClick :(Posada) -> Unit
 
 ) {
     Card(
@@ -45,12 +45,12 @@ fun PosadasCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = posadas.url,
+                model = posadas.imageUrl,
                 contentDescription="Posadas Image",
                 modifier = Modifier.size(128.dp)
             )
             Column(Modifier.padding(start = 8.dp)) {
-                Text(posadas.name, style = MaterialTheme.typography.titleLarge)
+                Text(posadas.nombre, style = MaterialTheme.typography.titleLarge)
 
                 // Updated Text for "Dirección"
                 Text(
@@ -58,7 +58,7 @@ fun PosadasCard(
                         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                             append("Dirección\n")
                         }
-                        append(posadas.dir)
+                        append(posadas.direccion)
                     },
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -69,7 +69,7 @@ fun PosadasCard(
                         withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                             append("Teléfono(s)\n")
                         }
-                        append(posadas.tel)
+                        append(posadas.telefono)
                     },
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -81,12 +81,17 @@ fun PosadasCard(
 @Preview(showBackground = true)
 @Composable
 fun PosadasCardPreview() {
-    val samplePosada = Posadas(
+    val samplePosada = Posada(
         id = 1,
-        name = "Posada del Sol",
-        dir = "Av. Siempre Viva 123",
-        tel = "555-1234, 555-5678",
-        url = "https://www.caritas.org.mx/wp-content/uploads/2018/06/caritas-posada-del-peregrino.jpg"
+        nombre = "Posada del Sol",
+        direccion = "Av. Siempre Viva 123",
+        telefono = "555-1234, 555-5678",
+        imageUrl = "https://www.caritas.org.mx/wp-content/uploads/2018/06/caritas-posada-del-peregrino.jpg",
+        isActive = 1,
+        capacidadTotal = 0,
+        capacidadDisponible = 0,
+        createdAt = "",
+        updatedAt = ""
     )
     PosadasCard(posadas = samplePosada, onItemClick = {})
 }

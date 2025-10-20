@@ -39,6 +39,12 @@ interface BackendApi {
 
     @DELETE("admin/reservas/delete/{reserva_id}")
     suspend fun adminCancelReserva(@Path("reserva_id") reservaId: Int): Response<ErrorResponse> // It returns a simple success/error message
+
+    @POST("reservations/create")
+    suspend fun createReservation(@Body request: CreateReservationRequest): Response<CreateReservationResponse>
+
+    @POST("reservations/check")
+    suspend fun checkReservation(@Body request: CheckReservationRequest): Response<CheckReservationResponse>
 }
 
 object ApiClient {

@@ -182,6 +182,7 @@ fun AuthNavHost(
             val fecha = backStackEntry.arguments?.getString("fecha")
             val telefono = backStackEntry.arguments?.getString("telefono")
             QRScreen(
+                navController = nav,
                 qrCodeUrl = qrCodeUrl,
                 posadaName = posada,
                 personCount = personas,

@@ -4,14 +4,18 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -32,9 +36,11 @@ import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
 import com.journeyapps.barcodescanner.BarcodeEncoder
 import androidx.core.graphics.set
+import androidx.navigation.NavController
 
 @Composable
 fun QRScreen(
+    navController: NavController,
     qrCodeUrl: String?,
     posadaName: String?,
     personCount: String?,
@@ -52,54 +58,71 @@ fun QRScreen(
 
     val UltraWhite = Color(0xFFFFFFFF)
 
-
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .background(UltraWhite)
-        .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center)
-    {
-        Image(painter = painterResource(id = R.drawable.caritas_logo),
-            contentDescription = "Logo Sof",
-            modifier = Modifier
-                .size(200.dp)
-                .padding(top = 4.dp)
-
+    Box(modifier = Modifier
+        .background(Color.White),
+        contentAlignment = Alignment.TopStart
+    ){
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .background(UltraWhite)
+            .verticalScroll(rememberScrollState())
+            .padding(top = 80.dp, start = 24.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         )
+        {
+            Image(painter = painterResource(id = R.drawable.caritas_logo),
+                contentDescription = "Logo Sof",
+                modifier = Modifier
+                    .size(200.dp)
+                    .padding(top = 4.dp)
 
-        Text("RESERVA CREADA",
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp)
+            )
 
-        Column(
-            modifier = Modifier
-                .width(300.dp)
-                .background(UltraWhite)
-                .padding(top = 10.dp),
-        ) {
-            TextField("Posada", posadaName ?: "No disponible")
-            TextField("Personas", personCount ?: "N/A")
-            TextField("Entrada", entryDate ?: "No disponible")
-            TextField("Teléfono", phone ?: "No disponible")
+            Text("RESERVA CREADA",
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp)
+
+            Column(
+                modifier = Modifier
+                    .width(300.dp)
+                    .background(UltraWhite)
+                    .padding(top = 10.dp),
+            ) {
+                TextField("Posada", posadaName ?: "No disponible")
+                TextField("Personas", personCount ?: "N/A")
+                TextField("Entrada", entryDate ?: "No disponible")
+                TextField("Teléfono", phone ?: "No disponible")
+            }
+
+            Text("Muestre el siguiente código QR al momento de llegar a su estadía",
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 20.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 20.sp
+            )
+            // Display the generated QR Code
+            if (qrCodeUrl != null) {
+                Image(
+                    bitmap = qrBitmap.asImageBitmap(),
+                    contentDescription = "Código QR de la reserva",
+                    modifier = Modifier.size(250.dp)
+                )
+            }
         }
-
-        Text("Muestre el siguiente código QR al momento de llegar a su estadía",
+        IconButton(
+            onClick = { navController.navigateUp() },
             modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .padding(top = 20.dp),
-            textAlign = TextAlign.Center,
-            fontSize = 20.sp
-        )
-        // Display the generated QR Code
-        if (qrCodeUrl != null) {
-            Image(
-                bitmap = qrBitmap.asImageBitmap(),
-                contentDescription = "Código QR de la reserva",
-                modifier = Modifier.size(250.dp)
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp, top = 32.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.arrow_back),
+                contentDescription = "Back"
             )
         }
     }
+
 }
 
 @Composable

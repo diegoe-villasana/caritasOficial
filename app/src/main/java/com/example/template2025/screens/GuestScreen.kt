@@ -164,25 +164,36 @@ fun GuestScreen(
                 // Selector de sede
                 DropdownField(
                     label = "Posada",
-                    selectValue = uiState.selectedPosada?.nombre?: "Seleccionar Posada",
+                    selectValue = uiState.selectedPosada?.nombre ?: "Seleccionar Posada",
                     expanded = uiState.isHeadquarterExpanded,
                     isError = uiState.selectedPosadaError != null,
                     supportingText = {
                         if (uiState.selectedPosadaError != null) {
-                            Text(uiState.selectedPosadaError, color = MaterialTheme.colorScheme.error)
+                            Text(
+                                uiState.selectedPosadaError,
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     },
-                    onExpandedChange = { expanded -> onStateChange(uiState.copy(isHeadquarterExpanded = expanded)) },
+                    onExpandedChange = { expanded ->
+                        onStateChange(
+                            uiState.copy(
+                                isHeadquarterExpanded = expanded
+                            )
+                        )
+                    },
                     onDismissRequest = { onStateChange(uiState.copy(isHeadquarterExpanded = false)) },
-                ){
+                ) {
                     posadaState.posadas.map { posadasList ->
                         DropdownMenuItem(
                             text = { Text(posadasList.nombre) },
                             onClick = {
-                                onStateChange(uiState.copy(
-                                    selectedPosada = posadasList,
-                                    isHeadquarterExpanded = false
-                                ))
+                                onStateChange(
+                                    uiState.copy(
+                                        selectedPosada = posadasList,
+                                        isHeadquarterExpanded = false
+                                    )
+                                )
                             }
                         )
 
@@ -193,6 +204,8 @@ fun GuestScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     PosadasCard(posadas = posadaSeleccionada, onItemClick = {})
                 }
+            }
+            item {
 
                 Spacer(modifier = Modifier.height(16.dp))
 

@@ -1,5 +1,6 @@
  package com.example.template2025
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,15 +11,26 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -30,27 +42,80 @@ import com.example.template2025.composables.MainScaffold
 import com.example.template2025.model.LoginCredentials
 import com.example.template2025.navigation.Route
 import com.example.template2025.screens.AdminLoginScreen
+import com.example.template2025.screens.ChatScreen
 import com.example.template2025.screens.CheckReservationScreen
 import com.example.template2025.screens.GuestScreen
 import com.example.template2025.screens.UserScreen
 import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.viewModel.AppViewModel
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            CaritasTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AppRoot(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
-        }
-    }
-}
+ class ChatActivity : ComponentActivity() {
+     @OptIn(ExperimentalMaterial3Api::class)
+     override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
+         setContent {
+             CaritasTheme {
+                 Scaffold(
+                     topBar = {
+                         TopAppBar(
+                             title = { Text("Chat") },
+                             navigationIcon = {
+                                 IconButton(onClick = { finish() }) {
+                                     Icon(
+                                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                         contentDescription = "Atrás"
+                                     )
+                                 }
+                             }
+                         )
+                     }
+                 ) { padding ->
+                     ChatScreen(
+                         modifier = Modifier
+                             .fillMaxSize()
+                             .padding(padding)
+                     )
+                 }
+             }
+         }
+     }
+ }
+
+
+
+ class MainActivity : ComponentActivity() {
+     override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
+         enableEdgeToEdge()
+         setContent {
+             CaritasTheme {
+                 val context = LocalContext.current
+                 Scaffold(
+                     modifier = Modifier.fillMaxSize(),
+                     floatingActionButton = {
+                         FloatingActionButton(
+                             onClick = {
+                                 context.startActivity(
+                                     Intent(context, ChatActivity::class.java)
+                                 )
+                             }
+                         ) {
+                             Icon(
+                                 imageVector = Icons.Default.Chat, // o tu ícono
+                                 contentDescription = "Chat"
+                             )
+                         }
+                     }
+                 ) { innerPadding ->
+                     AppRoot(
+                         modifier = Modifier.padding(innerPadding)
+                     )
+                 }
+             }
+         }
+     }
+ }
+
 
 
 @Composable

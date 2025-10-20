@@ -38,7 +38,7 @@ interface BackendApi {
     suspend fun adminGetReservaById(@Path("reserva_id") reservaId: Int): Response<ReservaByIdResponse>
 
     @DELETE("admin/reservas/delete/{reserva_id}")
-    suspend fun adminCancelReserva(@Path("reserva_id") reservaId: Int): Response<ErrorResponse> // It returns a simple success/error message
+    suspend fun adminCancelReserva(@Path("reserva_id") reservaId: Int): Response<ErrorResponse>
 }
 
 object ApiClient {
@@ -49,12 +49,16 @@ object ApiClient {
         appContext = context.applicationContext
     }
 
-    private val dataStore by lazy {
-        appContext?.let { AppDataStore(it) } ?: throw IllegalStateException("ApiClient not initialized.")
-    }
-
+    // No lanzamos en la creación; leemos el token de forma segura en cada petición.
     private val authInterceptor = Interceptor { chain ->
-        val token = runBlocking { dataStore.tokenFlow.first() }
+        val token = try {
+            appContext?.let { ctx ->
+                val ds = AppDataStore(ctx)
+                runBlocking { ds.tokenFlow.first() }
+            } ?: ""
+        } catch (e: Exception) {
+            ""
+        }
 
         val originalRequest = chain.request()
         val requestBuilder = originalRequest.newBuilder()
@@ -73,7 +77,7 @@ object ApiClient {
     private val retrofitAuthenticated: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(authenticatedHttpClient) // Uses the interceptor
+            .client(authenticatedHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -81,7 +85,7 @@ object ApiClient {
     private val retrofitPublic: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(publicHttpClient) // Does NOT use the interceptor
+            .client(publicHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

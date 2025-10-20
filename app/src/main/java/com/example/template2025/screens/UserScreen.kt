@@ -97,19 +97,6 @@ fun UserScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = onVolunteerClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth(0.8f)
-                    .border(1.dp, Color(0xFF009CA6), RoundedCornerShape(8.dp))
-            ) {
-                Text(text = "Voluntario", color = Color.Black)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
                 onClick = onAdminClick,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White),
                 shape = RoundedCornerShape(8.dp),

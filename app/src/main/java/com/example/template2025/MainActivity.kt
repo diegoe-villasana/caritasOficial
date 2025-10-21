@@ -58,6 +58,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.set
 import androidx.core.graphics.createBitmap
+import com.example.template2025.screens.MovableChatBubble
 
  class ChatActivity : ComponentActivity() {
      @OptIn(ExperimentalMaterial3Api::class)
@@ -99,32 +100,22 @@ import androidx.core.graphics.createBitmap
          enableEdgeToEdge()
          setContent {
              CaritasTheme {
-                 val context = LocalContext.current
                  Scaffold(
                      modifier = Modifier.fillMaxSize(),
-                     floatingActionButton = {
-                         FloatingActionButton(
-                             onClick = {
-                                 context.startActivity(
-                                     Intent(context, ChatActivity::class.java)
-                                 )
-                             }
-                         ) {
-                             Icon(
-                                 imageVector = Icons.Default.Chat, // o tu ícono
-                                 contentDescription = "Chat"
-                             )
-                         }
-                     }
+                     // Puedes eliminar o dejar el FloatingActionButton tradicional si quieres solo el flotante
                  ) { innerPadding ->
-                     AppRoot(
-                         modifier = Modifier.padding(innerPadding)
-                     )
+                     Box(Modifier.fillMaxSize().padding(innerPadding)) {
+                         // Tu app principal
+                         AppRoot(modifier = Modifier.matchParentSize())
+                         // Aquí se agrega el chat flotante
+                         MovableChatBubble()
+                     }
                  }
              }
          }
      }
  }
+
 
 
 

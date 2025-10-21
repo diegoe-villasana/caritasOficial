@@ -462,9 +462,6 @@ class QRScannerViewModel : ViewModel() {
                 newStatus = "checkin"
             )
 
-            Log.d("QRScannerViewModel", "QR token processed: $token")
-            Log.d("QRScannerViewModel", "Result: $result")
-
             result.onSuccess {
                 uiState = ScannerUiState.Success("Check-in realizado con éxito.")
             }.onFailure { error ->

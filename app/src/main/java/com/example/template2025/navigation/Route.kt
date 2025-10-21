@@ -36,11 +36,11 @@
         data object QrCode : Route("qr/{qr_code_url}?posada={posada}&personas={personas}&fecha={fecha}&telefono={telefono}") {
             // 2. UPDATE THE HELPER FUNCTION
             fun createRoute(
-                qrCodeUrl: String,
-                posada: String,
-                personas: String,
-                fecha: String,
-                telefono: String
+                qrCodeUrl: String?,
+                posada: String?,
+                personas: String?,
+                fecha: String?,
+                telefono: String?
             ): String {
                 // Encode each parameter to handle special characters like spaces or slashes
                 val encodedPosada = URLEncoder.encode(posada, "UTF-8")

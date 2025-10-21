@@ -1,6 +1,7 @@
 package com.example.template2025.viewModel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
@@ -437,3 +438,42 @@ class CheckReservationViewModel : ViewModel() {
     }
 }
 
+sealed interface ScannerUiState {
+    object Idle : ScannerUiState // Waiting to scan
+    object Loading : ScannerUiState // API call in progress
+    data class Success(val message: String) : ScannerUiState // API call succeeded
+    data class Error(val message: String) : ScannerUiState // API call failed
+}
+
+class QRScannerViewModel : ViewModel() {
+    private val repository = AdminRepository()
+
+    var uiState by mutableStateOf<ScannerUiState>(ScannerUiState.Idle)
+        private set
+
+    fun processQrToken(token: String) {
+        if (uiState is ScannerUiState.Loading) return
+
+        viewModelScope.launch {
+            uiState = ScannerUiState.Loading
+
+            val result = repository.updateReservationStatus(
+                qrToken = token,
+                newStatus = "checkin"
+            )
+
+            Log.d("QRScannerViewModel", "QR token processed: $token")
+            Log.d("QRScannerViewModel", "Result: $result")
+
+            result.onSuccess {
+                uiState = ScannerUiState.Success("Check-in realizado con éxito.")
+            }.onFailure { error ->
+                uiState = ScannerUiState.Error(error.message ?: "Error desconocido al procesar el QR.")
+            }
+        }
+    }
+
+    fun resetState() {
+        uiState = ScannerUiState.Idle
+    }
+}

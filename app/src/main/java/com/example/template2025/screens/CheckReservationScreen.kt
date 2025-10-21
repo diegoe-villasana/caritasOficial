@@ -62,7 +62,7 @@ fun CheckReservationScreen(
                     "pendiente", "confirmada" -> {
                         response.qrCodeUrl?.let { url ->
                             // **TODO Usar nuevo endpoint para obtener los datos de la reserva
-                            val route = Route.QrCode.createRoute(url, "N/A", "N/A", "N/A", "N/A")
+                            val route = Route.QrCode.createRoute(url, response.posada, response.personas.toString(), response.entrada, response.telefono)
                             navController.navigate(route) {
                                 popUpTo(Route.GuestLogin.route) { inclusive = true }
                             }

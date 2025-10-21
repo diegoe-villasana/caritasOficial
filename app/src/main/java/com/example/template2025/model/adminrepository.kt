@@ -47,6 +47,10 @@ data class UpdateEstadoRequest(
     @SerializedName("new_status") val estado: String
 )
 
+data class UpdateStatusRequest(
+    @SerializedName("new_status") val status: String
+)
+
 class AdminRepository {
     suspend fun login(user: String, password: String): Result<AdminLoginResponse> {
         return try {
@@ -173,6 +177,32 @@ class AdminRepository {
         return try {
             val request = UpdateEstadoRequest(estado = nuevoEstado)
             val response = ApiClient.api.adminUpdateReservaEstado(reservaId, request)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(Unit)
+            } else {
+                if (response.code() == 401) {
+                    throw AdminSessionExpiredException("Sesión expirada")
+                }
+                val errorBody = response.errorBody()?.string()
+                val errorMessage = if (errorBody != null) {
+                    Gson().fromJson(errorBody, ErrorResponse::class.java).msg
+                } else {
+                    "Error al actualizar el estado."
+                }
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: AdminSessionExpiredException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(Exception("No se pudo conectar al servidor. Revisa tu conexión a internet."))
+        }
+    }
+
+    suspend fun updateReservationStatus(qrToken: String, newStatus: String): Result<Unit> {
+        return try {
+            val request = UpdateStatusRequest(newStatus)
+            val response = ApiClient.api.updateReservationStatus(qrToken, request)
 
             if (response.isSuccessful && response.body()?.success == true) {
                 Result.success(Unit)

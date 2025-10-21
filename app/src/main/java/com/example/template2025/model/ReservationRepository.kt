@@ -8,6 +8,8 @@ import com.google.gson.annotations.SerializedName
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 
+class GuestSessionExpiredException(message: String) : Exception(message)
+
 data class CreateReservationRequest(
     @SerializedName("posadaId") val posadaId: Int,
     @SerializedName("fecha_entrada") val entryDate: String,
@@ -31,7 +33,11 @@ data class CheckReservationResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
     @SerializedName("reservationStatus") val reservationStatus: String?, // "pendiente", "checkin", etc.
-    @SerializedName("qrCodeUrl") val qrCodeUrl: String?
+    @SerializedName("qrCodeUrl") val qrCodeUrl: String?,
+    @SerializedName("personas") val personas: Number?,
+    @SerializedName("entrada") val entrada: String?,
+    @SerializedName("telefono") val telefono: String?,
+    @SerializedName("posada") val posada: String?
 )
 
 // 2. AÑADE la respuesta que esperamos
@@ -94,11 +100,6 @@ class ReservationRepository {
         dialCode: String
     ): Result<CheckReservationResponse> {
         return try {
-            val request = CheckReservationRequest(
-                fullName = fullName,
-                phone = phone,
-                dialCode = dialCode
-            )
             val response = ApiClient.api.checkReservation(
                 fullName = fullName,
                 phone = phone,

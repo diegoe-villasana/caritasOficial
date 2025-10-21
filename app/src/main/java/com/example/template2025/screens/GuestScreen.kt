@@ -107,20 +107,20 @@ fun GuestScreen(
                 confirmButton = {
                     Button(onClick = {
                             state.qr_token?.let { url ->
-                                val uiState = vm.formState // Get the form state
+                                val uiState = gvm.formState // Get the form state
                                 val totalPersonas = uiState.menCount + uiState.womenCount
                                 val telefono = "${uiState.applicantInfo.country.dialCode} ${uiState.applicantInfo.phone}"
 
                                 // Use the updated helper to build the route with all data
                                 val route = Route.QrCode.createRoute(
                                     qrCodeUrl = url,
-                                    posada = uiState.selectedPosada?.name ?: "N/A",
+                                    posada = uiState.selectedPosada?.nombre ?: "N/A",
                                     personas = totalPersonas.toString(),
                                     fecha = uiState.entryDate,
                                     telefono = telefono
                                 )
                                 navController.navigate(route)
-                                vm.resetReservationState()
+                                gvm.resetReservationState()
                             }
                         },
                         enabled = state.qrCodeUrl != null

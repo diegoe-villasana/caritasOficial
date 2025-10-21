@@ -281,7 +281,7 @@ class GuestViewModel : ViewModel() {
     // 5. Funciones para que la UI actualice el estado del formulario
     fun onFormStateChange(newState: GuestScreenState) {
         if (newState.selectedPosada?.id != formState.selectedPosada?.id) {
-            val selectedPosadaData = posadasList.find{it.id == newState.selectedPosada?.id}
+            val selectedPosadaData = posadasList.find { it.id == newState.selectedPosada?.id }
             posadasCapacity = selectedPosadaData?.capacidadDisponible ?: 0
         }
         formState = newState
@@ -349,25 +349,28 @@ class GuestViewModel : ViewModel() {
 
                 val result = repository.createReservation(formState)
 
-            // Procesamos el resultado
-            result.onSuccess { response ->
-                reservationState = ReservationUiState.Success(
-                    reservationId = response.reservationId,
-                    qrCodeUrl = response.qrCodeUrl,
-                    qr_token = response.qr_token
-                )
-            }.onFailure { error ->
-                // Si hubo un error, actualizamos el estado a Error
-                reservationState = ReservationUiState.Error(error.message ?: "Error desconocido")
+                // Procesamos el resultado
+                result.onSuccess { response ->
+                    reservationState = ReservationUiState.Success(
+                        reservationId = response.reservationId,
+                        qrCodeUrl = response.qrCodeUrl,
+                        qr_token = response.qr_token
+                    )
+                }.onFailure { error ->
+                    // Si hubo un error, actualizamos el estado a Error
+                    reservationState =
+                        ReservationUiState.Error(error.message ?: "Error desconocido")
+                }
             }
         }
-    }
 
-    // Función para resetear el estado (útil después de mostrar un error)
+
+
+
+    }
     fun resetReservationState() {
         reservationState = ReservationUiState.Idle
     }
-
 }
 
 sealed interface CheckReservationUiState {

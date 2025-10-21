@@ -88,7 +88,7 @@ fun QRScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         )
         {
-            Image(painter = painterResource(id = R.drawable.caritas_logo),
+            Image(painter = painterResource(id = R.drawable.logo_caritas),
                 contentDescription = "Logo Sof",
                 modifier = Modifier
                     .size(200.dp)
@@ -106,10 +106,10 @@ fun QRScreen(
                     .background(UltraWhite)
                     .padding(top = 10.dp),
             ) {
-                TextField("Posada", "+"+decodedPosada)
+                TextField("Posada", decodedPosada)
                 TextField("Personas", personCount ?: "N/A")
                 TextField("Entrada", entryDate ?: "No disponible")
-                TextField("Teléfono", decodedPhone)
+                TextField("Teléfono", "+"+decodedPhone)
             }
 
             Text("Muestre el siguiente código QR al momento de llegar a su estadía",

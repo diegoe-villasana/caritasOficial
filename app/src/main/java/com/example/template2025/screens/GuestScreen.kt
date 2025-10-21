@@ -2,6 +2,7 @@ package com.example.template2025.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,8 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +68,7 @@ import java.time.format.DateTimeFormatter
 import com.example.template2025.viewModel.GuestViewModel
 import com.example.template2025.viewModel.ReservationUiState
 import java.time.temporal.ChronoUnit
+import kotlin.math.exp
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -470,6 +474,7 @@ fun GuestScreen(
 
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownField(
     label: String,
@@ -481,32 +486,32 @@ fun DropdownField(
     onDismissRequest: () -> Unit,
     dropdownContent: @Composable (ColumnScope.() -> Unit)
 ) {
-    Column {
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = onExpandedChange
+    ) {
         OutlinedTextField(
             value = selectValue,
             onValueChange = {},
-            isError = isError,
-            supportingText = supportingText, // <-- Pasa el parámetro aquí
             readOnly = true,
             label = { Text(label) },
+            isError = isError,
+            supportingText = supportingText,
             trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Abrir selector",
-                    modifier = Modifier.clickable { onExpandedChange(true) }
-                )
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onExpandedChange(true) }
+                .menuAnchor()
         )
-        DropdownMenu(
+        ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = onDismissRequest,
-            modifier = Modifier.fillMaxWidth(0.9f)
-        ) {
+            onDismissRequest = {onExpandedChange(false)}
+        ){
             dropdownContent()
+
         }
+
     }
 }
 

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -383,13 +384,10 @@ fun GuestScreen(
                     count = uiState.menCount,
                     //flag para deshabilitar el boton de suma si se ha alcanzado la capacidad
                     isIncrementEnabled = !isCapacityReached,
+                    minCount = if(uiState.applicantInfo.gender =="Hombre") 1 else 0,
                     onCountChange = {newCount ->
-                        if(newCount < uiState.menCount) {
+                        if(!isCapacityReached || newCount < uiState.menCount) {
                             onStateChange(uiState.copy(menCount = newCount))
-                        } else{
-                            if(!isCapacityReached){
-                                onStateChange(uiState.copy(menCount = newCount))
-                            }
                         }
                     }
                 )
@@ -400,13 +398,10 @@ fun GuestScreen(
                     "Mujeres",
                     count = uiState.womenCount,
                     isIncrementEnabled = !isCapacityReached,
+                    minCount = if(uiState.applicantInfo.gender =="Mujer") 1 else 0,
                     onCountChange = {newCount ->
-                        if(newCount < uiState.womenCount) {
+                        if(!isCapacityReached || newCount < uiState.womenCount) {
                             onStateChange(uiState.copy(womenCount = newCount))
-                        } else{
-                            if(!isCapacityReached){
-                                onStateChange(uiState.copy(womenCount = newCount))
-                            }
                         }
                     }
                 )
@@ -632,7 +627,8 @@ fun Counter(
     count: Int,
     onCountChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    isIncrementEnabled: Boolean = true
+    isIncrementEnabled: Boolean = true,
+    minCount: Int = 1
 ){
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -652,11 +648,13 @@ fun Counter(
         ){
             //Boton -
             Button(
-                onClick = {onCountChange((count-1).coerceAtLeast(0))},
+                onClick = {onCountChange((count-1).coerceAtLeast(minCount))},
                 shape = MaterialTheme.shapes.small,
+                enabled = count > minCount,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0,59, 92), // Color de fondo personalizado (un verde azulado oscuro)
-                    contentColor = MaterialTheme.colorScheme.onPrimary
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = Color(223,223,223).copy(alpha=0.5f)
 
                 )
             ){
@@ -665,7 +663,9 @@ fun Counter(
             Text(
                 text = count.toString(),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.widthIn(min=36.dp),
+                textAlign = TextAlign.Center
             )
             //Boton +
             Button(

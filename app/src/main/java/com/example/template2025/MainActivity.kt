@@ -102,12 +102,9 @@ import com.example.template2025.screens.MovableChatBubble
              CaritasTheme {
                  Scaffold(
                      modifier = Modifier.fillMaxSize(),
-                     // Puedes eliminar o dejar el FloatingActionButton tradicional si quieres solo el flotante
                  ) { innerPadding ->
                      Box(Modifier.fillMaxSize().padding(innerPadding)) {
-                         // Tu app principal
                          AppRoot(modifier = Modifier.matchParentSize())
-                         // Aquí se agrega el chat flotante
                          MovableChatBubble()
                      }
                  }

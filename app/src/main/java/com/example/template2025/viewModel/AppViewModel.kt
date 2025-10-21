@@ -254,7 +254,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 sealed interface ReservationUiState {
     object Idle : ReservationUiState // Estado inicial
     object Loading : ReservationUiState // Estado de carga
-    data class Success(val reservationId: String?, val qrCodeUrl: String?) : ReservationUiState // Éxito
+    data class Success(val reservationId: String?, val qrCodeUrl: String?, val qr_token: String?) : ReservationUiState // Éxito
     data class Error(val message: String) : ReservationUiState // Error
 }
 
@@ -279,7 +279,6 @@ class GuestViewModel : ViewModel() {
         private set
 
     // 5. Funciones para que la UI actualice el estado del formulario
-
     fun onFormStateChange(newState: GuestScreenState) {
         if (newState.selectedPosada?.id != formState.selectedPosada?.id) {
             val selectedPosadaData = posadasList.find{it.id == newState.selectedPosada?.id}
@@ -350,19 +349,17 @@ class GuestViewModel : ViewModel() {
 
                 val result = repository.createReservation(formState)
 
-                result.onSuccess { response ->
-                    reservationState = ReservationUiState.Success(
-                        reservationId = response.reservationId,
-                        qrCodeUrl = response.qrCodeUrl
-                    )
-                }.onFailure { error ->
-                    reservationState = ReservationUiState.Error(error.message ?: "Error desconocido")
-                }
+            // Procesamos el resultado
+            result.onSuccess { response ->
+                reservationState = ReservationUiState.Success(
+                    reservationId = response.reservationId,
+                    qrCodeUrl = response.qrCodeUrl,
+                    qr_token = response.qr_token
+                )
+            }.onFailure { error ->
+                // Si hubo un error, actualizamos el estado a Error
+                reservationState = ReservationUiState.Error(error.message ?: "Error desconocido")
             }
-        } else {
-            // Si validateForm() devuelve false, no hacemos nada más.
-            // La función ya se encargó de poner los mensajes de error en `formState`,
-            // y la UI reaccionará a esos cambios mostrando los campos en rojo.
         }
     }
 
@@ -405,8 +402,8 @@ class CheckReservationViewModel : ViewModel() {
             searchState = CheckReservationUiState.Loading
             val result = repository.checkReservation(
                 fullName = formState.fullName,
-                phone = formState.phone,
-                dialCode = formState.country.dialCode
+                phone = formState.country.dialCode + formState.phone,
+                dialCode = formState.country.isoCode
             )
             result.onSuccess { response ->
                 searchState = CheckReservationUiState.Success(response)

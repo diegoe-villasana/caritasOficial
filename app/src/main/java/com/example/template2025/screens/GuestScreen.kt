@@ -106,13 +106,26 @@ fun GuestScreen(
                 text = {Text("Tu reservación con ID ${state.reservationId} ha sido creada. Se generará tu código QR")},
                 confirmButton = {
                     Button(onClick = {
-                        navController.navigate(Route.QRScreen.route) { //TODO: Checar esta pantalla para ir a ella después de hacer merge, pues Crashea
-                            popUpTo(Route.Guest.route) { inclusive = true }
-                        }
-                        gvm.resetReservationState()
-                    }) {
-                        Text("Ver QR")
+                            state.qr_token?.let { url ->
+                                val uiState = vm.formState // Get the form state
+                                val totalPersonas = uiState.menCount + uiState.womenCount
+                                val telefono = "${uiState.applicantInfo.country.dialCode} ${uiState.applicantInfo.phone}"
 
+                                // Use the updated helper to build the route with all data
+                                val route = Route.QrCode.createRoute(
+                                    qrCodeUrl = url,
+                                    posada = uiState.selectedPosada?.name ?: "N/A",
+                                    personas = totalPersonas.toString(),
+                                    fecha = uiState.entryDate,
+                                    telefono = telefono
+                                )
+                                navController.navigate(route)
+                                vm.resetReservationState()
+                            }
+                        },
+                        enabled = state.qrCodeUrl != null
+                    ) {
+                        Text("Ver QR")
                     }
                 }
             )
@@ -414,7 +427,6 @@ fun GuestScreen(
 
 
             item {
-
                 Button(
                     onClick = {
                         gvm.confirmReservation()

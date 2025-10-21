@@ -56,28 +56,33 @@ fun CheckReservationScreen(
         { newState -> viewModel.onFormStateChange(newState) }
     // Manejo de la lógica de navegación
     LaunchedEffect(searchState) {
-        if (searchState is CheckReservationUiState.Success) {
-            val response = searchState.response
-            when (response.reservationStatus) {
-                // Caso 1A: QR pendiente, mostrar QR
-                "pendiente", "confirmada" -> {
-                    navController.navigate(Route.QRScreen.route) {
+        when (searchState) {
+            is CheckReservationUiState.Success -> {
+                val response = searchState.response
+                when (response.reservationStatus) {
+                    "pendiente", "confirmada" -> {
+                        response.qrCodeUrl?.let { url ->
+                            // **TODO Usar nuevo endpoint para obtener los datos de la reserva
+                            val route = Route.QrCode.createRoute(url, "N/A", "N/A", "N/A", "N/A")
+                            navController.navigate(route) {
+                                popUpTo(Route.GuestLogin.route) { inclusive = true }
+                            }
+                        }
                     }
-                }
-                // Caso 1B: QR ya usado, ir a servicios
-                "checkin" -> {
-                    navController.navigate(Route.Services.route) {
-                        popUpTo(Route.GuestLogin.route) { inclusive = true }
+                    "checkin" -> {
+                        navController.navigate(Route.Services.route) {
+                            popUpTo(Route.GuestLogin.route) { inclusive = true }
+                        }
                     }
                 }
             }
-        }
-        if (searchState is CheckReservationUiState.Error) {
-            // Caso 2: No se encontró, ir a la pantalla de reserva
-            navController.navigate(Route.Guest.route) {
-
-                popUpTo(Route.GuestLogin.route) { inclusive = true }
+            is CheckReservationUiState.Error -> {
+                navController.navigate(Route.Guest.route) {
+                    popUpTo(Route.GuestLogin.route) { inclusive = true }
+                }
             }
+            is CheckReservationUiState.Loading -> { /* Do nothing while loading */ }
+            is CheckReservationUiState.Idle -> { /* Do nothing in initial state */ }
         }
     }
 

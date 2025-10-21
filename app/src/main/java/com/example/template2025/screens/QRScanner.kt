@@ -62,7 +62,7 @@ fun CameraPreviewScreen() {
     // ---- UI ----
     if (!hasPermission) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Camera permission required to scan QR codes.")
+            Text("Sin permisos de cámara")
         }
         return
     }

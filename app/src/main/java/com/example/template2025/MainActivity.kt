@@ -1,5 +1,6 @@
  package com.example.template2025
 
+import android.graphics.Bitmap
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -47,10 +48,16 @@ import com.example.template2025.screens.AdminLoginScreen
 import com.example.template2025.screens.ChatScreen
 import com.example.template2025.screens.CheckReservationScreen
 import com.example.template2025.screens.GuestScreen
+import com.example.template2025.screens.LoginScreen
 import com.example.template2025.screens.QRScreen
+import com.example.template2025.screens.RegisterScreen
 import com.example.template2025.screens.UserScreen
 import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.viewModel.AppViewModel
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+import androidx.core.graphics.set
+import androidx.core.graphics.createBitmap
 
  class ChatActivity : ComponentActivity() {
      @OptIn(ExperimentalMaterial3Api::class)
@@ -244,6 +251,31 @@ fun AuthNavHost(
 
         composable(Route.Guest.route) {
             GuestScreen(navController = nav, vm = vm)
+        }
+
+        composable(
+            route = Route.QrCode.route,
+            arguments = listOf(
+                navArgument("qr_code_url") { type = NavType.StringType },
+                navArgument("posada") { type = NavType.StringType; nullable = true },
+                navArgument("personas") { type = NavType.StringType; nullable = true },
+                navArgument("fecha") { type = NavType.StringType; nullable = true },
+                navArgument("telefono") { type = NavType.StringType; nullable = true }
+            )
+        ) { backStackEntry ->
+            val qrCodeUrl = backStackEntry.arguments?.getString("qr_code_url")
+            val posada = backStackEntry.arguments?.getString("posada")
+            val personas = backStackEntry.arguments?.getString("personas")
+            val fecha = backStackEntry.arguments?.getString("fecha")
+            val telefono = backStackEntry.arguments?.getString("telefono")
+            QRScreen(
+                navController = nav,
+                qrCodeUrl = qrCodeUrl,
+                posadaName = posada,
+                personCount = personas,
+                entryDate = fecha,
+                phone = telefono
+            )
         }
     }
 }

@@ -219,9 +219,6 @@ fun AuthNavHost(
                     onErrorDismiss()
                     nav.navigate(Route.GuestLogin.route)
                 },
-                onVolunteerClick = {
-                    onErrorDismiss()
-                },
                 onAdminClick = {
                     onErrorDismiss()
                     nav.navigate(Route.AdminLogin.route)

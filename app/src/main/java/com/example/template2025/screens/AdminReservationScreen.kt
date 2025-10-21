@@ -49,11 +49,13 @@ fun AdminReservationScreen(
     val statusOptions = listOf("Todos", "Pendiente", "Registrada")
 
     val filteredReservas = remember(reservaState.reservas, selectedStatus) {
+        val activeReservas = reservaState.reservas.filter { !it.estado.equals("checkout", ignoreCase = true) }
+
         when (selectedStatus.lowercase()) {
-            "todos" -> reservaState.reservas
+            "todos" -> activeReservas
             "pendiente" -> reservaState.reservas.filter { it.estado.equals("pendiente", ignoreCase = true) }
-            "registrada" -> reservaState.reservas.filter { it.estado.equals("registrada", ignoreCase = true) }
-            else -> reservaState.reservas
+            "registrada" -> reservaState.reservas.filter { it.estado.equals("checkin", ignoreCase = true) }
+            else -> activeReservas
         }
     }
 
@@ -220,7 +222,6 @@ fun DetailedReservationCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // This part remains the same
             Text(reserva.nombreSolicitante, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             HorizontalDivider()
@@ -229,8 +230,12 @@ fun DetailedReservationCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                val statusColor = if (reserva.estado.equals("pendiente", ignoreCase = true)) Color(0xFFFBC02D) else MaterialTheme.colorScheme.primary
-                CardInfoChip("Estado", reserva.estado.replaceFirstChar { it.uppercase() }, statusColor)
+                val (statusText, statusColor) = when {
+                    reserva.estado.equals("pendiente", ignoreCase = true) -> "Pendiente" to Color(0xFFFBC02D)
+                    reserva.estado.equals("checkin", ignoreCase = true) -> "Registrado" to MaterialTheme.colorScheme.primary
+                    else -> reserva.estado.replaceFirstChar { it.uppercase() } to Color.Gray
+                }
+                CardInfoChip("Estado", statusText, statusColor)
                 CardInfoChip("Entrada", formatReservationDate(reserva.fechaEntrada))
                 CardInfoChip("Personas", reserva.totalPersonas.toString())
             }

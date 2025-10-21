@@ -14,6 +14,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -39,7 +40,10 @@ interface BackendApi {
     suspend fun adminGetReservaById(@Path("reserva_id") reservaId: Int): Response<ReservaByIdResponse>
 
     @DELETE("admin/reservas/delete/{reserva_id}")
-    suspend fun adminCancelReserva(@Path("reserva_id") reservaId: Int): Response<ErrorResponse> // It returns a simple success/error message
+    suspend fun adminCancelReserva(@Path("reserva_id") reservaId: Int): Response<ErrorResponse>
+
+    @PUT("admin/reservas/estado/{reserva_id}")
+    suspend fun adminUpdateReservaEstado(@Path("reserva_id") reservaId: Int, @Body request: UpdateEstadoRequest): Response<ErrorResponse>
 
     @POST("reservations/create")
     suspend fun createReservation(@Body request: CreateReservationRequest): Response<CreateReservationResponse>

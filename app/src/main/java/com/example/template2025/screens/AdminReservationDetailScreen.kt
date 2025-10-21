@@ -69,6 +69,7 @@ fun AdminReservationDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showCancelDialog by remember { mutableStateOf(false) }
+    var showFinalizeDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = reservaId) {
         vm.fetchReservaById(reservaId)
@@ -134,6 +135,61 @@ fun AdminReservationDetailScreen(
         )
     }
 
+    if (showFinalizeDialog) {
+        AlertDialog(
+            onDismissRequest = { showFinalizeDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            title = {
+                Text(
+                    "Confirmar Finalización",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
+                )
+            },
+            text = {
+                Text(
+                    "¿Estás seguro de que deseas finalizar esta reserva (Check-out)?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                vm.updateReservaEstado(reservaId, "checkout") { success, message ->
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    if (success) {
+                                        navController.popBackStack()
+                                    }
+                                }
+                            }
+                            showFinalizeDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Sí, finalizar reserva")
+                    }
+                    Button(
+                        onClick = { showFinalizeDialog = false },
+                        colors = ButtonDefaults.outlinedButtonColors(),
+                        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("No, mantener activa")
+                    }
+                }
+            }
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -191,10 +247,10 @@ fun AdminReservationDetailScreen(
                         .fillMaxWidth()
                 ) {
 
-                    val statusColor = if (reserva.estado.equals("pendiente", ignoreCase = true)) {
-                        Color(0xFFFBC02D)
-                    } else {
-                        MaterialTheme.colorScheme.primary
+                    val (statusText, statusColor) = when {
+                        reserva.estado.equals("pendiente", ignoreCase = true) -> "Pendiente" to Color(0xFFFBC02D)
+                        reserva.estado.equals("checkin", ignoreCase = true) -> "Registrado" to MaterialTheme.colorScheme.primary
+                        else -> reserva.estado.replaceFirstChar { it.uppercase() } to Color.Gray
                     }
                     Surface(
                         shape = RoundedCornerShape(16.dp),
@@ -202,7 +258,7 @@ fun AdminReservationDetailScreen(
                         contentColor = statusColor
                     ) {
                         Text(
-                            text = reserva.estado.replaceFirstChar { it.uppercase() },
+                            text = statusText,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -328,7 +384,9 @@ fun AdminReservationDetailScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
-                            onClick = { /* TODO: End Reservation Logic */ },
+                            onClick = {
+                                showFinalizeDialog = true
+                            },
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.error

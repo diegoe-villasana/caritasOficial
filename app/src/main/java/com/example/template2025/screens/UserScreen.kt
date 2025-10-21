@@ -31,7 +31,6 @@ import com.example.template2025.R
 fun UserScreen(
     error: String?,
     onGuestClick: () -> Unit = {},
-    onVolunteerClick: () -> Unit = {},
     onAdminClick: () -> Unit = {}
 ) {
     Box(

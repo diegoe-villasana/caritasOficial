@@ -313,6 +313,7 @@ fun AdminHomeScreen(
                                 )
                             } else {
                                 val recentReservas = reservaState.reservas
+                                    .filter { !it.estado.equals("checkout", ignoreCase = true) }
                                     .sortedByDescending { it.createdAt }
                                     .take(5)
 
@@ -436,8 +437,13 @@ fun ReservationCard(
                     color = statusColor.copy(alpha = 0.15f),
                     contentColor = statusColor
                 ) {
+                    val statusText = when {
+                        reserva.estado.equals("pendiente", ignoreCase = true) -> "Pendiente"
+                        reserva.estado.equals("checkin", ignoreCase = true) -> "Registrado"
+                        else -> reserva.estado.replaceFirstChar { it.uppercase() } // Fallback for other states
+                    }
                     Text(
-                        text = reserva.estado.replaceFirstChar { it.uppercase() },
+                        text = statusText,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)

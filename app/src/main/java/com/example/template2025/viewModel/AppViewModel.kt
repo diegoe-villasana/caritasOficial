@@ -248,6 +248,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    fun updateReservaEstado(reservaId: Int, nuevoEstado: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val result = adminRepository.updateReservaEstado(reservaId, nuevoEstado)
+            result.fold(
+                onSuccess = {
+                    fetchReservaById(reservaId)
+                    getReservas()
+                    onResult(true, "Estado actualizado correctamente.")
+                },
+                onFailure = { exception ->
+                    onResult(false, exception.message ?: "Error desconocido.")
+                }
+            )
+        }
+    }
 }
 
 // 1. Estados para la UI: Carga, Éxito, Error

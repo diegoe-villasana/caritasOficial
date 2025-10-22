@@ -31,7 +31,8 @@ import com.example.template2025.R
 fun UserScreen(
     error: String?,
     onGuestClick: () -> Unit = {},
-    onAdminClick: () -> Unit = {}
+    onAdminClick: () -> Unit = {},
+    onVolunteerClick: () -> Unit = {} // nuevo callback
 ) {
     Box(
         modifier = Modifier
@@ -104,6 +105,20 @@ fun UserScreen(
                     .border(1.dp, Color(0xFF009CA6), RoundedCornerShape(8.dp))
             ) {
                 Text(text = "Administrador", color = Color.Black)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Nuevo botón para Voluntariado
+            Button(
+                onClick = onVolunteerClick,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .border(1.dp, Color(0xFF009CA6), RoundedCornerShape(8.dp))
+            ) {
+                Text(text = "Voluntariado", color = Color.Black)
             }
         }
 

@@ -58,6 +58,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.set
 import androidx.core.graphics.createBitmap
+import com.example.template2025.screens.RegistroVoluntarioView
 
  class ChatActivity : ComponentActivity() {
      @OptIn(ExperimentalMaterial3Api::class)
@@ -222,8 +223,17 @@ fun AuthNavHost(
                 onAdminClick = {
                     onErrorDismiss()
                     nav.navigate(Route.AdminLogin.route)
+                },
+                onVolunteerClick = {
+                    onErrorDismiss()
+                    nav.navigate(Route.RegistroVoluntariado.route)
                 }
             )
+        }
+
+        composable(Route.RegistroVoluntariado.route) {
+            // al registrar con éxito vuelve a la pantalla anterior (UserScreen)
+            RegistroVoluntarioView(onRegistered = { nav.popBackStack() })
         }
 
         composable(Route.AdminLogin.route) {

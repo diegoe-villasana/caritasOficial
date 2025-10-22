@@ -18,7 +18,9 @@ import com.example.template2025.model.VoluntarioRegistroRequest
 import kotlinx.coroutines.launch
 
 @Composable
-fun RegistroVoluntarioView() {
+fun RegistroVoluntarioView(
+    onRegistered: () -> Unit = {} // nuevo callback
+) {
     val alberguesCaritas = listOf(
         "Albergue San Juan Bosco",
         "Albergue Madre Teresa de Calcuta",
@@ -75,6 +77,7 @@ fun RegistroVoluntarioView() {
                         val resp = ApiClient.publicApi.registrarVoluntario(req)
                         if (resp.isSuccessful) {
                             Toast.makeText(context, "Registro enviado correctamente", Toast.LENGTH_SHORT).show()
+                            onRegistered() // vuelve a UserScreen o popBackStack según quien pase el callback
                         } else {
                             val err = resp.errorBody()?.string() ?: "HTTP ${resp.code()}"
                             Toast.makeText(context, "Error al enviar: $err", Toast.LENGTH_LONG).show()

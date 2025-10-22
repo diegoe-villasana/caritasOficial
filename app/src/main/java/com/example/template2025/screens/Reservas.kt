@@ -186,7 +186,7 @@ fun DatePickerBox(reserva: String, onReservaChange: (String) -> Unit) {
     val datePickerDialog = DatePickerDialog(
         context,
         { _: DatePicker, y: Int, m: Int, d: Int ->
-            val fechaSeleccionada = "$d/${m + 1}/$y"
+            val fechaSeleccionada = "$y-${m + 1}-$d"
             onReservaChange(fechaSeleccionada)
         }, year, month, day
     )
@@ -286,14 +286,13 @@ fun Nombre(){
 }
 
 @Composable
-fun Telefono(){
-    var telefono by remember{ mutableStateOf("") }
+fun Telefono(telefono: String, onTelefonoChange: (String) -> Unit){ // <-- Recibe parámetros
     val PrimaryBlue = Color(0xFF0097A7)
     val PrimaryBlueDark = Color(0xFF00796B)
     val TextColor = Color(0xFF212121)
     OutlinedTextField(
-        value = telefono,
-        onValueChange={telefono = it},
+        value = telefono, // <-- Usa el parámetro
+        onValueChange = onTelefonoChange, // <-- Usa el parámetro
         label={Text("Telefono")},
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
@@ -372,7 +371,18 @@ fun reservas(navController: NavController){
         "Hospital IMSS 25" to "25.6599, -100.2783",
         "Hospital IMSS 34" to "25.7500,-100.3500",
         "Hospital general zona 22" to "25.6500,-100.2500",
-        "otros" to ""
+        "Hospital general de zona no 67" to "25.792, -100.140",
+        "Hospital General zona 2" to "25.6700, -100.2959",
+        "UMAE Hospital de Especialidades" to "25.7005, -100.3440",
+        "UMAE Hospital clinica 23" to "25.6749, -100.3217",
+        "UMAE Hospital de Cardiologia" to "25.7000, -100.3448",
+
+        "otros" to "",
+        "Posada del Peregrino" to "25.689, -100.315",
+        "Posada del Peregrino Divina Providencia" to "25.675, -100.315",
+        "Posada del Peregrino Apodaca" to "25.783, -100.223"
+
+
     )
 
 
@@ -385,7 +395,7 @@ fun reservas(navController: NavController){
     var Destino by remember { mutableStateOf("") }
     var Origen by remember {mutableStateOf("")}
 
-
+    var numTel by remember { mutableStateOf("") }
     var expandedservicio by remember { mutableStateOf(false) }
     var expandedSexo by remember { mutableStateOf(false) }
     var expandedHora by remember { mutableStateOf(false) }
@@ -397,13 +407,16 @@ fun reservas(navController: NavController){
     var idusuario by remember { mutableStateOf("1") }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val opcionServicio = listOf("Casa", "Ducha", "Transporte")
+    val opcionServicio = listOf("Psicologo", "Ducha", "Transporte", "Comida","Medico")
     val opcionDestino = listOf("Hospital IMSS 25, Hospital IMSS 34, Hospital general zona 22")
     val opcionUbicacion = listOf("Sede Central,otros ")
     val destinoHospitales = listOf("Hospital IMSS 25", "Hospital IMSS 34", "Hospital general zona 22")
-    val destinoSedes = listOf("Sede Central", "otros")
+    val destinoPosadadelPeregrino = listOf("UMAE Hospital de Especialidades", "UMAE Hospital clinica 23", "UMAE Hospital de Cardiologia")
+    val destinoPosadaAPodaca = listOf("Hospital general de zona no 67")
+    val destinoDivinaProvidencia = listOf("Hospital General zona 2")
+    val destinoSedes = listOf("Posada del Peregrino", "Posada del Peregrino Divina Providencia", "Posada del Peregrino Apodaca")
     val opcionsexo = listOf("Hombre", "Mujer")
-    val opcionOrigen=listOf("Sede Central","otros", "Hospital IMSS 25", "Hospital IMSS 34", "Hospital general zona 22")
+    val opcionOrigen=listOf("Sede Central","otros", "Hospital IMSS 25", "Hospital IMSS 34", "Hospital general zona 22","Posada del Peregrino", "Posada del Peregrino Divina Providencia", "Posada del Peregrino Apodaca")
     val opcionHora = listOf(
         "6:00", "6:30",
         "7:00", "7:30",
@@ -580,27 +593,47 @@ fun reservas(navController: NavController){
                     expanded = expandedUbicacion,
                     onDismissRequest = {expandedUbicacion = false},
                     modifier = Modifier.exposedDropdownSize()
-                ) { if(Origen == "Sede Central"){
-                    destinoHospitales.forEach{destinoHospitales -> DropdownMenuItem(
-                        text = {Text(destinoHospitales)},
+                ) { if(Origen == "Posada del Peregrino Divina Providencia"){
+                    destinoDivinaProvidencia.forEach{destinoDivinaProvidencia -> DropdownMenuItem(
+                        text = {Text(destinoDivinaProvidencia)},
                         onClick = {
-                            Ubicacion = destinoHospitales
+                            Ubicacion = destinoDivinaProvidencia
                             expandedUbicacion = false
 
                         }
+
                     )
                     }
                 }
-
-                    destinoSedes.forEach{destinoSedes -> DropdownMenuItem(
+                else if (Origen == "Posada del Peregrino"){
+                        destinoPosadadelPeregrino.forEach { destinoPosadadelPeregrino -> DropdownMenuItem(
+                            text = {Text(destinoPosadadelPeregrino)},
+                            onClick = {
+                                Ubicacion = destinoPosadadelPeregrino
+                                expandedUbicacion = false
+                            }
+                        ) }
+                }
+                else if (Origen == "Posada del Peregrino Apodaca"){
+                    destinoPosadaAPodaca.forEach { destinoPosadaAPodaca -> DropdownMenuItem(
+                        text = {Text(destinoPosadaAPodaca)},
+                        onClick = {
+                            Ubicacion = destinoPosadaAPodaca
+                            expandedUbicacion = false
+                        }
+                    ) }
+                }
+                else{
+                    destinoSedes.forEach { destinoSedes -> DropdownMenuItem(
                         text = {Text(destinoSedes)},
                         onClick = {
                             Ubicacion = destinoSedes
                             expandedUbicacion = false
-
                         }
-                    )
-                    }
+                    ) }
+                }
+
+
                 }
             }
 
@@ -712,15 +745,20 @@ fun reservas(navController: NavController){
         Spacer(Modifier.height(16.dp))
 
 
+
+
         Button(
             onClick = {
                 coroutineScope.launch {
                     try {
+                        
+                        val telefonoFijo = "5512345678"
 
                         val request = ReservaRequest(
                             servicio = servicio,
-                            reserva = reserva,
-                            idusuario = idusuario.toIntOrNull() ?: 0
+                            idusuario = idusuario.toIntOrNull() ?: 0,
+                            Num_Tel = telefonoFijo,
+                            fecha = reserva 
                         )
 
                         val response = Peticiones.api.enviarReserva(request)
@@ -736,8 +774,7 @@ fun reservas(navController: NavController){
                     }
                 }
             },
-
-            ) {
+        ) {
             Text("Confirmar Reserva")
         }
 
@@ -801,7 +838,6 @@ fun reservas(navController: NavController){
             repeat(numPersonas) {index ->
                 Text(text = "Persona ${index + 1}", style = MaterialTheme.typography.titleMedium)
                 Nombre()
-                Telefono()
                 Spacer(Modifier.height(30.dp))
                 ExposedDropdownMenuBox(expanded = expandedSexo, onExpandedChange ={expandedSexo = !expandedSexo}, modifier = Modifier.fillMaxWidth()) {
 

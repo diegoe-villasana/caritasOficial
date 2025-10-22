@@ -17,15 +17,23 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.ui.viewinterop.AndroidView
 import android.widget.Toast
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.unit.sp
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -44,7 +52,10 @@ import androidx.navigation.NavController
 import java.util.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.template2025.composables.PhoneField
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.config.Configuration.*
 
@@ -183,7 +194,8 @@ fun DatePickerBox(reserva: String, onReservaChange: (String) -> Unit) {
                 )
             }
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(horizontal = 60.dp)
     )
 }
@@ -414,6 +426,8 @@ fun reservas(navController: NavController){
         "20:00"
     )
 
+    var telefono by rememberSaveable { mutableStateOf("") }
+    var paisSeleccionado by remember { mutableStateOf(getCountries().first { it.isoCode == "MX" }) }
 
     Column(
         modifier = Modifier
@@ -425,7 +439,8 @@ fun reservas(navController: NavController){
 
 
     ){
-        Image(painter = painterResource(id = R.drawable.logo_caritas),
+        Image(
+            painter = painterResource(id = R.drawable.logo_caritas),
             contentDescription = "Logo Sof",
             modifier = Modifier
                 .size(300.dp)
@@ -440,14 +455,17 @@ fun reservas(navController: NavController){
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontSize = 20.sp
             ))
-        Text("Al confirmar se generara un QR para presentar al Transportista",
+        Text("Al confirmar se generara una solicitud del servicio correspondiente",
             color = Color.Black,
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontSize = 12.sp
             ))
         Spacer(Modifier.height(16.dp))
 
-        ExposedDropdownMenuBox(expanded = expandedservicio, onExpandedChange ={expandedservicio = !expandedservicio}, modifier = Modifier.fillMaxWidth()) {
+        ExposedDropdownMenuBox(
+            expanded = expandedservicio,
+            onExpandedChange ={expandedservicio = !expandedservicio},
+            modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = servicio,
                 onValueChange = {},
@@ -458,7 +476,6 @@ fun reservas(navController: NavController){
                 },
                 modifier = Modifier
                     .menuAnchor()
-
                     .height(70.dp)
                     .padding(horizontal = 60.dp)
                 ,
@@ -664,6 +681,20 @@ fun reservas(navController: NavController){
             }
         }
 
+        Spacer(Modifier.height(16.dp))
+
+        PhoneField(
+            phone = telefono,
+            onPhoneChange = { telefono = it },
+            selectedCountry = paisSeleccionado,
+            onCountryChange = { paisSeleccionado = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 60.dp)
+        )
+
+        Spacer(Modifier.height(16.dp))
+
         ExposedDropdownMenuBox(expanded  = expandedHora, onExpandedChange ={expandedHora = !expandedHora}, modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = Hora,
@@ -730,21 +761,22 @@ fun reservas(navController: NavController){
             onClick = {
                 coroutineScope.launch {
                     try {
-                        
-                        val telefonoFijo = "5512345678"
+
+                        val telefonoCompleto = "${paisSeleccionado.dialCode}${telefono}"
+
 
                         val request = ReservaRequest(
                             servicio = servicio,
-                            idusuario = idusuario.toIntOrNull() ?: 0,
-                            Num_Tel = telefonoFijo,
-                            fecha = reserva 
+                            num_tel = telefonoCompleto,
+                            fecha = reserva
                         )
+
 
                         val response = Peticiones.api.enviarReserva(request)
 
                         Toast.makeText(
                             context,
-                            if (response.success) "${response.msg}" else "${response.msg}",
+                            if (response.success) "Se hizo la solicitud del servicio ${servicio}" else "No se pudo agendar el servicio",
                             Toast.LENGTH_LONG
                         ).show()
 
@@ -809,7 +841,8 @@ fun reservas(navController: NavController){
         Spacer(Modifier.height(16.dp))
         val numPersonas = personas.toIntOrNull() ?: 0
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -825,5 +858,3 @@ fun reservas(navController: NavController){
         }
     }
 }
-
-

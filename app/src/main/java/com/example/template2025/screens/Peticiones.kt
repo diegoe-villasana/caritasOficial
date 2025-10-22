@@ -8,10 +8,8 @@ import retrofit2.http.POST
 // Peticiones.kt
 data class ReservaRequest(
     val servicio: String,
-    val idusuario: Int,
-    val Num_Tel: String,
+    val num_tel: String,
     val fecha: String,
-
 )
 
 data class ReservaResponse(
@@ -20,7 +18,7 @@ data class ReservaResponse(
 )
 
 interface BackendApi {
-    @POST("reservas")
+    @POST("servicios")
     suspend fun enviarReserva(@Body request: ReservaRequest): ReservaResponse
 }
 

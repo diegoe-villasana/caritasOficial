@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.template2025.R
+import com.example.template2025.composables.PhoneField
 import com.example.template2025.navigation.Route
 import com.example.template2025.viewModel.CheckReservationFormState
 import com.example.template2025.viewModel.CheckReservationUiState
@@ -137,7 +138,9 @@ fun CheckReservationScreen(
                         phone = formState.phone,
                         onPhoneChange = { onFormChange(formState.copy(phone = it)) },
                         selectedCountry = formState.country,
-                        onCountryChange = { onFormChange(formState.copy(country = it)) }
+                        onCountryChange = { onFormChange(formState.copy(country = it)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
                     )
                     Spacer(Modifier.height(4.dp))
 

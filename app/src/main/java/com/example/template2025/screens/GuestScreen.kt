@@ -80,6 +80,7 @@ import com.example.template2025.viewModel.GuestViewModel
 import com.example.template2025.viewModel.ReservationUiState
 import java.time.temporal.ChronoUnit
 import com.example.template2025.avisoprivacidad.AVISO_PRIVACIDAD
+import com.example.template2025.composables.PhoneField
 import com.example.template2025.viewModel.CapacidadState
 
 
@@ -644,7 +645,9 @@ fun PersonInfoSection(
             phone = personInfo.phone,
             onPhoneChange = { newPhone -> onPersonInfoChange(personInfo.copy(phone = newPhone)) },
             selectedCountry = personInfo.country,
-            onCountryChange = { newCountry -> onPersonInfoChange(personInfo.copy(country = newCountry)) }
+            onCountryChange = { newCountry -> onPersonInfoChange(personInfo.copy(country = newCountry)) },
+            modifier = Modifier
+                .fillMaxWidth()
         )
         if (phoneError != null) {
             Text(
@@ -773,72 +776,6 @@ fun Counter(
         }
     }
 
-}
-
-@Composable
-fun PhoneField(
-    phone: String,
-    onPhoneChange: (String) -> Unit,
-    selectedCountry: Country,
-    onCountryChange: (Country) -> Unit,
-    label: String = "Teléfono"
-) {
-    val countries = remember { getCountries() }
-    var countryMenuExpanded by remember { mutableStateOf(false) }
-
-    OutlinedTextField(
-        value = phone,
-        onValueChange = {
-            newValue ->
-            //Filtra para que solo contenga digitos
-            val filteredValue = newValue.filter { it.isDigit() }
-            //Limita la longitud a 10 chars
-            val limitedValue = filteredValue.take(10)
-            //Llama al evento onPhoneChange con el valor limpio
-            onPhoneChange(limitedValue)
-        },
-        label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = Modifier.fillMaxWidth(),
-        leadingIcon = {
-            // Este es el selector del código de país
-            Row(
-                modifier = Modifier
-                    .clickable { countryMenuExpanded = true }
-                    .padding(horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(selectedCountry.flag) // Bandera
-                Spacer(modifier = Modifier.padding(horizontal = 4.dp))
-                Text(selectedCountry.dialCode) // Código (+52)
-                Icon(Icons.Default.ArrowDropDown, contentDescription = "Seleccionar país")
-
-                // Menú desplegable con la lista de países
-                DropdownMenu(
-                    expanded = countryMenuExpanded,
-                    onDismissRequest = { countryMenuExpanded = false }
-                ) {
-                    countries.forEach { country ->
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(country.flag)
-                                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                                    Text(country.name)
-                                    Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-                                    Text(country.dialCode, style = MaterialTheme.typography.bodySmall)
-                                }
-                            },
-                            onClick = {
-                                onCountryChange(country)
-                                countryMenuExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    )
 }
 
 @Composable

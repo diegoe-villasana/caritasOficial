@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import android.app.DatePickerDialog
+import android.util.Log
 import android.widget.DatePicker
 import androidx.compose.foundation.background
 import androidx.compose.runtime.*
@@ -21,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.template2025.screens.Peticiones
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,10 +35,12 @@ import kotlinx.coroutines.launch
 import com.example.template2025.screens.ReservaRequest
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.unit.sp
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
 
 import retrofit2.Retrofit
@@ -65,6 +69,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.input.KeyboardType
+import com.example.template2025.composables.PhoneField
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 
 import org.osmdroid.config.Configuration.* // Para inicializar OSMdroid
@@ -204,7 +210,8 @@ fun DatePickerBox(reserva: String, onReservaChange: (String) -> Unit) {
                 )
             }
         },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
             .padding(horizontal = 60.dp)
     )
 }
@@ -435,6 +442,8 @@ fun reservas(navController: NavController){
         "20:00"
     )
 
+    var telefono by rememberSaveable { mutableStateOf("") }
+    var paisSeleccionado by remember { mutableStateOf(getCountries().first { it.isoCode == "MX" }) }
 
     Column(
         modifier = Modifier
@@ -446,7 +455,8 @@ fun reservas(navController: NavController){
 
 
     ){
-        Image(painter = painterResource(id = R.drawable.logo_caritas),
+        Image(
+            painter = painterResource(id = R.drawable.logo_caritas),
             contentDescription = "Logo Sof",
             modifier = Modifier
                 .size(300.dp)
@@ -685,6 +695,20 @@ fun reservas(navController: NavController){
             }
         }
 
+        Spacer(Modifier.height(16.dp))
+
+        PhoneField(
+            phone = telefono,
+            onPhoneChange = { telefono = it },
+            selectedCountry = paisSeleccionado,
+            onCountryChange = { paisSeleccionado = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 60.dp)
+        )
+
+        Spacer(Modifier.height(16.dp))
+
         ExposedDropdownMenuBox(expanded  = expandedHora, onExpandedChange ={expandedHora = !expandedHora}, modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = Hora,
@@ -751,21 +775,26 @@ fun reservas(navController: NavController){
             onClick = {
                 coroutineScope.launch {
                     try {
-                        
-                        val telefonoFijo = "5512345678"
+
+                        val telefonoCompleto = "${paisSeleccionado.dialCode}${telefono}"
+
+                        Log.d("ReservaRequest", "Telefono: $telefonoCompleto")
 
                         val request = ReservaRequest(
                             servicio = servicio,
-                            idusuario = idusuario.toIntOrNull() ?: 0,
-                            Num_Tel = telefonoFijo,
-                            fecha = reserva 
+                            num_tel = telefonoCompleto,
+                            fecha = reserva
                         )
+
+                        Log.d("ReservaRequest", "Telefono: $request")
 
                         val response = Peticiones.api.enviarReserva(request)
 
+                        Log.d("ReservaResponse", "Success: ${response.success}, Msg: ${response}")
+
                         Toast.makeText(
                             context,
-                            if (response.success) "${response.msg}" else "${response.msg}",
+                            if (response.success) "Se hizo la solicitud del servicio ${servicio}" else "No se pudo agendar el servicio",
                             Toast.LENGTH_LONG
                         ).show()
 
@@ -830,7 +859,8 @@ fun reservas(navController: NavController){
         Spacer(Modifier.height(16.dp))
         val numPersonas = personas.toIntOrNull() ?: 0
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -846,5 +876,3 @@ fun reservas(navController: NavController){
         }
     }
 }
-
-

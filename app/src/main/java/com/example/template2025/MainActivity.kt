@@ -58,6 +58,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.set
 import androidx.core.graphics.createBitmap
+import com.example.template2025.screens.reservas
 
  class ChatActivity : ComponentActivity() {
      @OptIn(ExperimentalMaterial3Api::class)
@@ -149,7 +150,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
             SplashScreen(
                 vm = vm,
                 nav = nav
-            )
+            )//aqui iba el splash
         }
 
         // AUTH FLOW
@@ -202,80 +203,91 @@ fun AppRoot(modifier: Modifier = Modifier) {
 
 }
 
-@Composable
-fun AuthNavHost(
-    vm: AppViewModel,
-    isLoading: Boolean,
-    error: String?,
-    onErrorDismiss: () -> Unit,
-    onLoggedIn: (credentials: LoginCredentials) -> Unit
-) {
-    val nav = rememberNavController()
-    NavHost(navController = nav, startDestination = Route.User.route) {
-        composable(Route.User.route) {
-            UserScreen(
-                error = error,
-                onGuestClick = {
-                    onErrorDismiss()
-                    nav.navigate(Route.GuestLogin.route)
-                },
-                onAdminClick = {
-                    onErrorDismiss()
-                    nav.navigate(Route.AdminLogin.route)
-                }
-            )
-        }
+ @Composable
+ fun AuthNavHost(
+     vm: AppViewModel,
+     isLoading: Boolean,
+     error: String?,
+     onErrorDismiss: () -> Unit,
+     onLoggedIn: (credentials: LoginCredentials) -> Unit
+ ) {
+     val nav = rememberNavController()
 
-        composable(Route.AdminLogin.route) {
-            AdminLoginScreen(
-                isLoading = isLoading,
-                error = error,
-                onErrorDismiss = onErrorDismiss,
-                onBack = { nav.popBackStack() },
-                onLogin = { user, password ->
-                    val credentials = LoginCredentials.Admin(user, password)
-                    onLoggedIn(credentials)
-                }
-            )
-        }
+     NavHost(navController = nav, startDestination = Route.User.route) {
 
-        composable(Route.GuestLogin.route) {
-            CheckReservationScreen(
-                navController = nav,
-                onBack = { nav.navigateUp() }
-            )
-        }
+         // --- Tus rutas de Login (ya las tenías) ---
+         composable(Route.User.route) {
+             UserScreen(
+                 error = error,
+                 onGuestClick = {
+                     onErrorDismiss()
+                     nav.navigate(Route.GuestLogin.route)
+                 },
+                 onAdminClick = {
+                     onErrorDismiss()
+                     nav.navigate(Route.AdminLogin.route)
+                 }
+             )
+         }
 
-        composable(Route.Guest.route) {
-            GuestScreen(navController = nav, vm = vm)
-        }
+         composable(Route.AdminLogin.route) {
+             AdminLoginScreen(
+                 isLoading = isLoading,
+                 error = error,
+                 onErrorDismiss = onErrorDismiss,
+                 onBack = { nav.popBackStack() },
+                 onLogin = { user, password ->
+                     val credentials = LoginCredentials.Admin(user, password)
+                     onLoggedIn(credentials)
+                 }
+             )
+         }
 
-        composable(
-            route = Route.QrCode.route,
-            arguments = listOf(
-                navArgument("qr_code_url") { type = NavType.StringType },
-                navArgument("posada") { type = NavType.StringType; nullable = true },
-                navArgument("personas") { type = NavType.StringType; nullable = true },
-                navArgument("fecha") { type = NavType.StringType; nullable = true },
-                navArgument("telefono") { type = NavType.StringType; nullable = true }
-            )
-        ) { backStackEntry ->
-            val qrCodeUrl = backStackEntry.arguments?.getString("qr_code_url")
-            val posada = backStackEntry.arguments?.getString("posada")
-            val personas = backStackEntry.arguments?.getString("personas")
-            val fecha = backStackEntry.arguments?.getString("fecha")
-            val telefono = backStackEntry.arguments?.getString("telefono")
-            QRScreen(
-                navController = nav,
-                qrCodeUrl = qrCodeUrl,
-                posadaName = posada,
-                personCount = personas,
-                entryDate = fecha,
-                phone = telefono
-            )
-        }
-    }
-}
+         composable(Route.GuestLogin.route) {
+             CheckReservationScreen(
+                 navController = nav,
+                 onBack = { nav.navigateUp() }
+             )
+         }
+
+         composable(Route.Guest.route) {
+             GuestScreen(navController = nav, vm = vm)
+         }
+
+         // --- 1. ¡CAMBIO AQUÍ! ---
+         // Ahora el apodo "Servicios" apunta a tu pantalla "reservas".
+         composable(Route.Servicios.route) { // <-- ¡CAMBIADO!
+             reservas(navController = nav)
+         }
+
+         // --- 2. Ruta de QRScreen (la que tiene el botón) ---
+         composable(
+             route = Route.QrCode.route,
+             arguments = listOf(
+                 navArgument("qr_code_url") { type = NavType.StringType },
+                 navArgument("posada") { type = NavType.StringType; nullable = true },
+                 navArgument("personas") { type = NavType.StringType; nullable = true },
+                 navArgument("fecha") { type = NavType.StringType; nullable = true },
+                 navArgument("telefono") { type = NavType.StringType; nullable = true }
+             )
+         ) { backStackEntry ->
+             val qrCodeUrl = backStackEntry.arguments?.getString("qr_code_url")
+             val posada = backStackEntry.arguments?.getString("posada")
+             val personas = backStackEntry.arguments?.getString("personas")
+             val fecha = backStackEntry.arguments?.getString("fecha")
+             val telefono = backStackEntry.arguments?.getString("telefono")
+
+             QRScreen(
+                 navController = nav,
+                 qrCodeUrl = qrCodeUrl,
+                 posadaName = posada,
+                 personCount = personas,
+                 entryDate = fecha,
+                 phone = telefono
+             )
+         }
+     }
+ }
 
 @Composable
 fun SplashScreen(vm: AppViewModel, nav: NavHostController) {

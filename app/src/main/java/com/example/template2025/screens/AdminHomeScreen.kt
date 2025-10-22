@@ -61,6 +61,7 @@ import com.example.template2025.viewModel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.text.Typography.registered
 
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
@@ -259,10 +260,13 @@ fun AdminHomeScreen(
                             if (selectedPosadaName == "Todos los albergues") {
                                 posadaState.posadas.forEachIndexed { index, posada ->
                                     val reservasForPosada = reservaState.reservas.filter { it.posadaId == posada.id }
-                                    val pending = reservasForPosada.count { it.estado.equals("pendiente", ignoreCase = true) }
-                                    val registered = reservasForPosada.count { it.estado.equals("checkin", ignoreCase = true) }
-                                    val occupied = posada.capacidadTotal - posada.capacidadDisponible
-                                    val available = posada.capacidadDisponible - pending
+
+                                    val pendingPeople = reservasForPosada.filter { it.estado.equals("pendiente", ignoreCase = true) }.sumOf { it.totalPersonas }
+                                    val occupiedPeople = reservasForPosada.filter { it.estado.equals("checkin", ignoreCase = true) }.sumOf { it.totalPersonas }
+                                    val available = posada.capacidadTotal - occupiedPeople - pendingPeople
+
+                                    val pendingReservations = reservasForPosada.count { it.estado.equals("pendiente", ignoreCase = true) }
+                                    val registeredReservations = reservasForPosada.count { it.estado.equals("checkin", ignoreCase = true) }
 
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -284,8 +288,8 @@ fun AdminHomeScreen(
                                         SummarySection(
                                             title = "Capacidad",
                                             stats = listOf(
-                                                "Ocupados" to occupied.toString(),
-                                                "Reservados" to pending.toString()
+                                                "Ocupados" to occupiedPeople.toString(),
+                                                "Reservados" to pendingPeople.toString()
                                             ),
                                             colors = listOf(occupiedColor, pendingColor)
                                         )
@@ -298,12 +302,12 @@ fun AdminHomeScreen(
                                             colors = listOf(freeColor, primaryColor)
                                         )
                                         SummarySection(
-                                                title = "Reservas",
-                                        stats = listOf(
-                                            "Pendientes" to pending.toString(),
-                                            "Registradas" to registered.toString()
-                                        ),
-                                        colors = listOf(pendingColor, primaryColor)
+                                            title = "Reservas",
+                                            stats = listOf(
+                                                "Pendientes" to pendingReservations.toString(),
+                                                "Registradas" to registeredReservations.toString()
+                                            ),
+                                            colors = listOf(pendingColor, primaryColor)
                                         )
                                         SummarySection(
                                             title = "Voluntarios",

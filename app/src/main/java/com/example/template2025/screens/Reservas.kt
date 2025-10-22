@@ -53,8 +53,8 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
 
 
-
-
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavController
 ////
 import androidx.compose.ui.platform.LocalContext
 import java.util.*
@@ -344,12 +344,14 @@ fun Personas(personas: String, onPersonasChange: (String) -> Unit,modifier: Modi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Preview(){
-    reservas()
+    val navController = rememberNavController()
+    // Y se lo pasamos
+    reservas(navController = navController)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun reservas(){
+fun reservas(navController: NavController){
     val PrimaryBlue = Color(0xFF0097A7)
     val PrimaryBlueDark = Color(0xFF00796B)
     val LightGrayBackground = Color(0xFFF5F5F5)
@@ -734,8 +736,8 @@ fun reservas(){
                     }
                 }
             },
-            
-        ) {
+
+            ) {
             Text("Confirmar Reserva")
         }
 

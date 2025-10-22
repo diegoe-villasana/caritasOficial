@@ -5,10 +5,12 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
 
+// Peticiones.kt
 data class ReservaRequest(
     val servicio: String,
-    val reserva: String,
-    val idusuario: Int
+    val idusuario: Int,
+    val Num_Tel: String,
+    val fecha: String,
 
 )
 

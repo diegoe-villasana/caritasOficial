@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -79,7 +80,7 @@ import com.example.template2025.viewModel.GuestViewModel
 import com.example.template2025.viewModel.ReservationUiState
 import java.time.temporal.ChronoUnit
 import com.example.template2025.avisoprivacidad.AVISO_PRIVACIDAD
-
+import com.example.template2025.viewModel.CapacidadState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,7 +96,13 @@ fun GuestScreen(
     val posadaState by vm.posadaState.collectAsState()
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedPosadaName by remember { mutableStateOf("") }
+    val capacidadState by gvm.capacidadState.collectAsState()
 
+    LaunchedEffect(key1 = uiState.selectedPosada, key2 = uiState.entryDate) {
+        uiState.selectedPosada?.let { posada ->
+            gvm.fetchCapacidad(posada.id, uiState.entryDate)
+        }
+    }
 
     LaunchedEffect(Unit) {
         vm.getPosadas()
@@ -389,8 +396,9 @@ fun GuestScreen(
 
                 //calcular el total de guests si se ha alcanzado el limite
                 val totalGuests = uiState.menCount + uiState.womenCount
-                val capacity = vm.posadaState.value.posadas.firstOrNull()?.capacidadDisponible?: 0
-                val isCapacityReached = if(capacity > 0) totalGuests >= capacity else false
+                val capacidad = (capacidadState as? CapacidadState.Success)?.capacidad ?: 0
+                val isLoadingCapacidad = capacidadState is CapacidadState.Loading
+                val isCapacityReached = if(capacidad > 0) totalGuests >= capacidad else false
 
 
                 //Contador hombres
@@ -398,7 +406,7 @@ fun GuestScreen(
                     "Hombres",
                     count = uiState.menCount,
                     //flag para deshabilitar el boton de suma si se ha alcanzado la capacidad
-                    isIncrementEnabled = !isCapacityReached,
+                    isIncrementEnabled = !isCapacityReached && !isLoadingCapacidad,
                     minCount = if(uiState.applicantInfo.gender =="Hombre") 1 else 0,
                     onCountChange = {newCount ->
                         if(!isCapacityReached || newCount < uiState.menCount) {
@@ -412,7 +420,7 @@ fun GuestScreen(
                 Counter(
                     "Mujeres",
                     count = uiState.womenCount,
-                    isIncrementEnabled = !isCapacityReached,
+                    isIncrementEnabled = !isCapacityReached && !isLoadingCapacidad,
                     minCount = if(uiState.applicantInfo.gender =="Mujer") 1 else 0,
                     onCountChange = {newCount ->
                         if(!isCapacityReached || newCount < uiState.womenCount) {
@@ -420,16 +428,72 @@ fun GuestScreen(
                         }
                     }
                 )
-                if(capacity > 0){
-                    Text(
-                        text="Capacidad disponible: $capacity",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top=8.dp),
-                        textAlign = TextAlign.Center,
-                        color = if(isCapacityReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha=0.6f)
-                    )
+                when (capacidadState) {
+                    is CapacidadState.Loading -> {
+                        // Mientras carga, mostramos un indicador para que el usuario sepa que algo está pasando.
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0, 156, 166)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Verificando capacidad...",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                    is CapacidadState.Success -> {
+                        // Cuando tenemos éxito, mostramos el texto de capacidad como lo tenías.
+                        val capacidadActual = (capacidadState as CapacidadState.Success).capacidad
+                        if (capacidadActual > 0) {
+                            Text(
+                                text = "Capacidad disponible: $capacidadActual",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                textAlign = TextAlign.Center,
+                                // El color cambia a rojo si se alcanza la capacidad.
+                                color = if (isCapacityReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        } else if (!isLoadingCapacidad) {
+                            // Opcional: Mostrar un mensaje si la capacidad es 0.
+                            Text(
+                                text = "No hay lugares disponibles para esta fecha.",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    is CapacidadState.Error -> {
+                        // Si hay un error de red o del servidor, se lo informamos al usuario.
+                        Text(
+                            text = "No se pudo verificar la capacidad.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    is CapacidadState.Idle -> {
+                        // Estado inicial, no mostramos nada. Se podría poner un Spacer si se necesita.
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

@@ -25,6 +25,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import com.example.template2025.model.CheckReservationResponse
 import com.example.template2025.screens.Country
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 data class AuthState(
     val isLoading: Boolean = false,
@@ -280,6 +282,10 @@ class GuestViewModel : ViewModel() {
     // 2. Instancia del Repositorio
     private val repository = ReservationRepository()
 
+    // Nuevo estado para almacenar la capacidad y el estado de carga
+    private val _capacidadState = MutableStateFlow<CapacidadState>(CapacidadState.Idle)
+    val capacidadState: StateFlow<CapacidadState> = _capacidadState
+
 
     private var posadasList: List<Posada> = emptyList()
 
@@ -380,14 +386,44 @@ class GuestViewModel : ViewModel() {
                 }
             }
         }
-
-
-
-
     }
     fun resetReservationState() {
         reservationState = ReservationUiState.Idle
     }
+
+    fun fetchCapacidad(posadaId: Int, fecha: String) {
+        // Ignorar si los datos no están listos
+        if (fecha.isBlank() || posadaId == -1) {
+            _capacidadState.value = CapacidadState.Idle
+            return
+        }
+
+        // Convertir la fecha de DD/MM/YYYY a YYYY-MM-DD
+        val fechaApi: String = try {
+            val localDate = LocalDate.parse(fecha, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        } catch (e: Exception) {
+            _capacidadState.value = CapacidadState.Error("Fecha inválida")
+            return
+        }
+
+        viewModelScope.launch {
+            _capacidadState.value = CapacidadState.Loading
+            val result = repository.getCapacidadDisponible(posadaId, fechaApi)
+            result.onSuccess { capacidad ->
+                _capacidadState.value = CapacidadState.Success(capacidad)
+            }.onFailure { error ->
+                _capacidadState.value = CapacidadState.Error(error.message ?: "Error desconocido")
+            }
+        }
+    }
+}
+
+sealed class CapacidadState {
+    object Idle : CapacidadState()
+    object Loading : CapacidadState()
+    data class Success(val capacidad: Int) : CapacidadState()
+    data class Error(val message: String) : CapacidadState()
 }
 
 sealed interface CheckReservationUiState {

@@ -48,6 +48,12 @@ data class CheckReservationRequest(
     @SerializedName("codigoPais") val dialCode: String
 )
 
+data class CapacidadDisponibleResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("posada_id") val posadaId: Int,
+    @SerializedName("fecha") val fecha: String,
+    @SerializedName("capacidad_disponible") val capacidadDisponible: Int
+)
 
 class ReservationRepository {
 
@@ -65,7 +71,8 @@ class ReservationRepository {
                 "${uiState.applicantInfo.country.dialCode}${uiState.applicantInfo.phone}"
 
             val request = CreateReservationRequest(
-                posadaId = uiState.selectedPosada?.id?:0, // Usamos 'id' directamente, que ahora debe ser Int en Posadas
+                posadaId = uiState.selectedPosada?.id
+                    ?: 0, // Usamos 'id' directamente, que ahora debe ser Int en Posadas
                 entryDate = formattedDate,
                 menCount = uiState.menCount,
                 womenCount = uiState.womenCount,
@@ -121,7 +128,25 @@ class ReservationRepository {
         }
 
     }
+
+    suspend fun getCapacidadDisponible(posadaID: Int, fecha: String): Result<Int> {
+        return try {
+            val response = ApiClient.api.getCapacidadDisponible(posadaID, fecha)
+            if (response.isSuccessful && response.body() != null && response.body()!!.success) {
+                Result.success(response.body()!!.capacidadDisponible)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Error desconocido"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Error de conexión: ${e.message}"))
+
+        }
+    }
 }
+
+
+
 
 
 

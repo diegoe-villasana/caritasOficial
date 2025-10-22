@@ -12,8 +12,6 @@
         data object User : Route("user")
         data object AdminLogin : Route("adminlogin")
         data object GuestLogin : Route("guestlogin")
-        data object Login : Route("login")
-        data object Register : Route("register")
 
     // Main internas
     data object  Servicios: Route("servicios")

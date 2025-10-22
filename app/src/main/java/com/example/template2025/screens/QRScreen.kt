@@ -1,6 +1,7 @@
 package com.example.template2025.screens
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -33,7 +34,6 @@ import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.set
 import androidx.navigation.NavController
 import java.net.URLDecoder
-//imports mios de reservas
 import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height

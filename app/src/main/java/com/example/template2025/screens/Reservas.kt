@@ -1,36 +1,25 @@
 package com.example.template2025.screens
 
 import com.example.template2025.R
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import android.app.DatePickerDialog
 import android.widget.DatePicker
 import androidx.compose.foundation.background
-import androidx.compose.runtime.*
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.ui.viewinterop.AndroidView
-import com.example.template2025.screens.Peticiones
 import android.widget.Toast
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
-
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-
-import com.example.template2025.screens.ReservaRequest
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -38,7 +27,6 @@ import androidx.compose.ui.unit.sp
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -51,23 +39,14 @@ import androidx.compose.material3.TextFieldDefaults
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
-
-
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavController
-////
-import androidx.compose.ui.platform.LocalContext
 import java.util.*
-
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.toArgb
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-
-import org.osmdroid.config.Configuration.* // Para inicializar OSMdroid
+import org.osmdroid.config.Configuration.*
 
 
 fun decodePoly(encoded: String): List<GeoPoint> {
@@ -286,13 +265,13 @@ fun Nombre(){
 }
 
 @Composable
-fun Telefono(telefono: String, onTelefonoChange: (String) -> Unit){ // <-- Recibe parámetros
+fun Telefono(telefono: String, onTelefonoChange: (String) -> Unit){
     val PrimaryBlue = Color(0xFF0097A7)
     val PrimaryBlueDark = Color(0xFF00796B)
     val TextColor = Color(0xFF212121)
     OutlinedTextField(
-        value = telefono, // <-- Usa el parámetro
-        onValueChange = onTelefonoChange, // <-- Usa el parámetro
+        value = telefono,
+        onValueChange = onTelefonoChange,
         label={Text("Telefono")},
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),

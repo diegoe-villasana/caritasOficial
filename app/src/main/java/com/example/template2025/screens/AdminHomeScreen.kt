@@ -61,8 +61,6 @@ import com.example.template2025.viewModel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.text.Typography.registered
-
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -74,22 +72,12 @@ fun AdminHomeScreen(
     val reservaState by vm.reservaState.collectAsState()
 
     var isDropdownExpanded by remember { mutableStateOf(false) }
-    var selectedPosadaName by remember { mutableStateOf("") }
+    var selectedPosadaName by remember { mutableStateOf("Todos los albergues") }
     val posadaOptions = listOf("Todos los albergues") + posadaState.posadas.map { it.nombre }
 
-    LaunchedEffect(Unit) {
-        vm.getPosadas()
-    }
-
-    LaunchedEffect(posadaState.posadas) {
-        if (posadaState.posadas.isNotEmpty() && selectedPosadaName.isEmpty()) {
-            selectedPosadaName = "Todos los albergues"
-        }
-    }
-
     LaunchedEffect(selectedPosadaName) {
-        if (selectedPosadaName.isEmpty()) {
-            return@LaunchedEffect
+        if (posadaState.posadas.isEmpty()) {
+            vm.getPosadas()
         }
 
         if (selectedPosadaName == "Todos los albergues") {
@@ -232,14 +220,29 @@ fun AdminHomeScreen(
                     }
                 }
                 reservaState.error != null -> {
-                    Text(
-                        text = "Error: ${reservaState.error}",
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
-                    )
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Error: ${reservaState.error}",
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Button(onClick = {
+                            val currentSelection = selectedPosadaName
+                            selectedPosadaName = ""
+                            selectedPosadaName = currentSelection
+                        }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Reintentar")
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("Reintentar")
+                        }
+                    }
                 }
                 else -> {
                     val occupiedColor = Color(0xFFD32F2F)

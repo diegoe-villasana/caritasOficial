@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.template2025.model.Posada
 import com.example.template2025.viewModel.AppViewModel
-import kotlin.text.append
 
 private data class Voluntario(
     val id: Int,

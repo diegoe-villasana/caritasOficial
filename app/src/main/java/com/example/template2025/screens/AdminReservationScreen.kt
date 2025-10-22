@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -106,6 +107,37 @@ fun AdminReservationScreen(
         }
     }
 
+    posadaState.error?.let { error ->
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Error al cargar los albergues: $error",
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                Button(
+                    onClick = { vm.getPosadas() },
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reintentar",
+                        modifier = Modifier.size(ButtonDefaults.IconSize)
+                    )
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text("Reintentar")
+                }
+            }
+        }
+        return
+    }
+
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
         Column(
             modifier = Modifier
@@ -192,7 +224,24 @@ fun AdminReservationScreen(
                     CircularProgressIndicator(modifier = Modifier.padding(top = 40.dp))
                 }
                 reservaState.error != null -> {
-                    Text("Error: ${reservaState.error}", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 40.dp))
+                    Column(
+                        modifier = Modifier.padding(top = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Error: ${reservaState.error}",
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        Button(onClick = {
+                            selectedPosada?.let { vm.getReservasByPosada(it.id) }
+                        }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Reintentar")
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("Reintentar")
+                        }
+                    }
                 }
                 filteredReservas.isEmpty() -> {
                     Text("No hay reservaciones que coincidan con los filtros.", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 40.dp))

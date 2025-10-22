@@ -45,6 +45,18 @@ interface BackendApi {
     @PUT("admin/reservas/estado/{reserva_id}")
     suspend fun adminUpdateReservaEstado(@Path("reserva_id") reservaId: Int, @Body request: UpdateEstadoRequest): Response<ErrorResponse>
 
+    @PUT("admin/reservas/pagado/{reserva_id}")
+    suspend fun adminMarkAsPaid(@Path("reserva_id") reservaId: Int, @Body request: UpdatePagadoRequest): Response<ErrorResponse>
+
+    @GET("admin/voluntarios")
+    suspend fun adminGetVoluntarios(): Response<VoluntariosGetResponse>
+
+    @PUT("admin/voluntarios/estado/{voluntario_id}")
+    suspend fun adminUpdateVoluntarioEstado(@Path("voluntario_id") voluntarioId: Int, @Body request: UpdateEstadoRequest): Response<ErrorResponse>
+
+    @DELETE("admin/voluntarios/delete/{voluntario_id}")
+    suspend fun adminDeleteVoluntario(@Path("voluntario_id") voluntarioId: Int): Response<ErrorResponse>
+
     @POST("reservations/create")
     suspend fun createReservation(@Body request: CreateReservationRequest): Response<CreateReservationResponse>
 
@@ -64,14 +76,13 @@ object ApiClient {
         appContext = context.applicationContext
     }
 
-    // No lanzamos en la creación; leemos el token de forma segura en cada petición.
     private val authInterceptor = Interceptor { chain ->
         val token = try {
             appContext?.let { ctx ->
                 val ds = AppDataStore(ctx)
                 runBlocking { ds.tokenFlow.first() }
             } ?: ""
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             ""
         }
 

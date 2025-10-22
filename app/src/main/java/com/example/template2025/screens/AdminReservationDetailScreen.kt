@@ -116,6 +116,7 @@ fun AdminReservationDetailScreen(
     val scope = rememberCoroutineScope()
     var showCancelDialog by remember { mutableStateOf(false) }
     var showFinalizeDialog by remember { mutableStateOf(false) }
+    var showPayDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = reservaId) {
         vm.fetchReservaById(reservaId)
@@ -235,6 +236,40 @@ fun AdminReservationDetailScreen(
             }
         )
     }
+
+    if (showPayDialog) {
+        AlertDialog(onDismissRequest = { showPayDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            title = { Text("Confirmar Pago", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Confirmas que se ha recibido el pago para esta reserva?") },
+            confirmButton = {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                vm.updatePagado(reservaId) { success, message ->
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            showPayDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Sí, Marcar como Pagado") }
+                    Button(
+                        onClick = { showPayDialog = false },
+                        colors = ButtonDefaults.outlinedButtonColors(),
+                        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Cancelar") }
+                }
+            }
+        )
+    }
+
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
         Column(
             modifier = Modifier
@@ -293,22 +328,41 @@ fun AdminReservationDetailScreen(
                             .fillMaxWidth()
                     ) {
 
-                        val (statusText, statusColor) = when {
-                            reserva.estado.equals("pendiente", ignoreCase = true) -> "Pendiente" to Color(0xFFFBC02D)
-                            reserva.estado.equals("checkin", ignoreCase = true) -> "Registrado" to MaterialTheme.colorScheme.primary
-                            else -> reserva.estado.replaceFirstChar { it.uppercase() } to Color.Gray
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = statusColor.copy(alpha = 0.15f),
-                            contentColor = statusColor
-                        ) {
-                            Text(
-                                text = statusText,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Main Status Tag (Unchanged)
+                            val (statusText, statusColor) = when {
+                                reserva.estado.equals("pendiente", ignoreCase = true) -> "Pendiente" to Color(0xFFFBC02D)
+                                reserva.estado.equals("checkin", ignoreCase = true) -> "Registrado" to MaterialTheme.colorScheme.primary
+                                else -> reserva.estado.replaceFirstChar { it.uppercase() } to Color.Gray
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = statusColor.copy(alpha = 0.15f),
+                                contentColor = statusColor
+                            ) {
+                                Text(
+                                    text = statusText,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                            if (reserva.estado.equals("checkin", ignoreCase = true)) {
+                                val paymentStatus = if (reserva.pagado == 1) "Pagado" else "Pendiente de Pago"
+                                val paymentColor = if (reserva.pagado == 1) Color(0xFF388E3C) else Color(0xFFD32F2F)
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = paymentColor.copy(alpha = 0.15f),
+                                    contentColor = paymentColor
+                                ) {
+                                    Text(
+                                        text = paymentStatus,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
@@ -417,7 +471,7 @@ fun AdminReservationDetailScreen(
                                     Text("Cancelar Reserva")
                                 }
                             }
-                        } else {
+                        } else if (reserva.estado.equals("checkin", ignoreCase = true)) {
                             Spacer(modifier = Modifier.height(24.dp))
                             HorizontalDivider(thickness = 2.dp)
                             Spacer(modifier = Modifier.height(16.dp))
@@ -459,12 +513,12 @@ fun AdminReservationDetailScreen(
                             Spacer(modifier = Modifier.height(24.dp))
 
                             Button(
-                                onClick = {
-                                    Toast.makeText(context, "Pago de servicios confirmado", Toast.LENGTH_SHORT).show()
-                                },
+                                onClick = { showPayDialog = true },
+                                enabled = reserva.pagado != 1,
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    disabledContainerColor = Color.Gray.copy(alpha = 0.5f)
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -472,12 +526,12 @@ fun AdminReservationDetailScreen(
                             }
 
                             Button(
-                                onClick = {
-                                    showFinalizeDialog = true
-                                },
+                                onClick = { showFinalizeDialog = true },
+                                enabled = reserva.pagado == 1,
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    disabledContainerColor = Color.Gray.copy(alpha = 0.5f)
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {

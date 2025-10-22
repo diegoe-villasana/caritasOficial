@@ -32,9 +32,7 @@ import java.util.UUID
 fun ChatScreen(modifier: Modifier = Modifier) {
     val messages = remember {
         mutableStateListOf(
-            ChatMessage("¡Hola! ¿En qué podemos ayudarte hoy?", fromMe = false, time = "12:03"),
-            ChatMessage("Necesito información sobre donaciones.", fromMe = true, time = "12:04"),
-            ChatMessage("Claro, con gusto. ¿Prefieres transferencia o efectivo?", fromMe = false, time = "12:04")
+            ChatMessage("¡Hola! En breve te atenderemos, por favor deja tu consulta en un solo mensaje.", fromMe = false, time = currentTimeString()),
         )
     }
     var input by remember { mutableStateOf("") }

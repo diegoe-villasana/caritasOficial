@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import com.example.template2025.model.CheckReservationResponse
+import com.example.template2025.model.Voluntario
 import com.example.template2025.screens.Country
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -53,6 +54,12 @@ data class ReservaDetailState(
     val error: String? = null
 )
 
+data class VoluntarioState(
+    val isLoading: Boolean = false,
+    val voluntarios: List<Voluntario> = emptyList(),
+    val error: String? = null
+)
+
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val dataStore = AppDataStore(app)
     private val adminRepository = AdminRepository()
@@ -68,6 +75,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _reservaDetailState = MutableStateFlow(ReservaDetailState())
     val reservaDetailState: StateFlow<ReservaDetailState> = _reservaDetailState.asStateFlow()
+
+    private val _voluntarioState = MutableStateFlow(VoluntarioState())
+    val voluntarioState: StateFlow<VoluntarioState> = _voluntarioState.asStateFlow()
 
     private val _navigateToAuth = MutableStateFlow(false)
     val navigateToAuth: StateFlow<Boolean> = _navigateToAuth.asStateFlow()
@@ -267,6 +277,71 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             )
         }
     }
+
+    fun updatePagado(reservaId: Int, onResult: (success: Boolean, message: String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val result = adminRepository.markReservaAsPaid(reservaId)
+                result.fold(
+                    onSuccess = {
+                        fetchReservaById(reservaId)
+                        getReservas()
+                        onResult(true, "Reserva marcada como pagada.")
+                    },
+                    onFailure = { exception ->
+                        onResult(false, exception.message ?: "Error desconocido.")
+                    }
+                )
+            } catch (_: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
+                onResult(false, "Tu sesión ha expirado.")
+            }
+        }
+    }
+
+    fun getVoluntarios() {
+        viewModelScope.launch {
+            _voluntarioState.value = VoluntarioState(isLoading = true)
+            try {
+                val result = adminRepository.getVoluntarios()
+                result.onSuccess { data ->
+                    _voluntarioState.value = VoluntarioState(voluntarios = data)
+                }.onFailure { error ->
+                    _voluntarioState.value = VoluntarioState(error = error.message)
+                }
+            } catch (e: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
+            }
+        }
+    }
+
+    fun acceptVoluntario(voluntarioId: Int) {
+        viewModelScope.launch {
+            val result = adminRepository.updateVoluntarioEstado(voluntarioId, "checkin")
+            result.onSuccess {
+                getVoluntarios()
+            }
+        }
+    }
+
+    fun rejectVoluntario(voluntarioId: Int) {
+        viewModelScope.launch {
+            val result = adminRepository.deleteVoluntario(voluntarioId)
+            result.onSuccess {
+                getVoluntarios()
+            }
+        }
+    }
+
+    fun finalizeVoluntario(voluntarioId: Int) {
+        viewModelScope.launch {
+            val result = adminRepository.updateVoluntarioEstado(voluntarioId, "checkout")
+            result.onSuccess {
+                getVoluntarios()
+            }
+        }
+    }
+
 }
 
 // 1. Estados para la UI: Carga, Éxito, Error

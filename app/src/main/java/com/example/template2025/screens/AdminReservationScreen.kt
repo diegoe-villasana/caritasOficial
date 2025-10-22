@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.template2025.components.Servicio
 import com.example.template2025.model.Posada
 import com.example.template2025.model.Reserva
 import com.example.template2025.navigation.Route
@@ -30,6 +32,40 @@ import com.example.template2025.viewModel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.text.contains
+
+
+private val sampleServices = listOf(
+    Servicio(
+        "Transporte",
+        "22 / Oct / 2025",
+        "14:30",
+        150.00
+    ),
+    Servicio(
+        "Comida",
+        "22 / Oct / 2025",
+        "20:00",
+        75.50
+    ),
+    Servicio(
+        "Lavandería",
+        "23 / Oct / 2025",
+        "11:00",
+        50.00
+    ),
+    Servicio(
+        "Comida",
+        "23 / Oct / 2025",
+        "12:30",
+        85.00
+    ),
+    Servicio(
+        "Transporte",
+        "24 / Oct / 2025",
+        "09:00",
+        25.00
+    )
+)
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -65,10 +101,41 @@ fun AdminReservationScreen(
         }
     }
 
-    LaunchedEffect(selectedPosada) {
+    LaunchedEffect(selectedPosada, selectedStatus) {
         selectedPosada?.let {
             vm.getReservasByPosada(it.id)
         }
+    }
+
+    posadaState.error?.let { error ->
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Error al cargar los albergues: $error",
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                Button(
+                    onClick = { vm.getPosadas() },
+                    shape = RoundedCornerShape(8.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reintentar",
+                        modifier = Modifier.size(ButtonDefaults.IconSize)
+                    )
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text("Reintentar")
+                }
+            }
+        }
+        return
     }
 
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
@@ -157,14 +224,35 @@ fun AdminReservationScreen(
                     CircularProgressIndicator(modifier = Modifier.padding(top = 40.dp))
                 }
                 reservaState.error != null -> {
-                    Text("Error: ${reservaState.error}", color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 40.dp))
+                    Column(
+                        modifier = Modifier.padding(top = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Error: ${reservaState.error}",
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        Button(onClick = {
+                            selectedPosada?.let { vm.getReservasByPosada(it.id) }
+                        }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Reintentar")
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("Reintentar")
+                        }
+                    }
                 }
                 filteredReservas.isEmpty() -> {
                     Text("No hay reservaciones que coincidan con los filtros.", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 40.dp))
                 }
                 else -> {
                     Button(
-                        onClick = { /* TODO: Navigate to QR Scanner */ },
+                        onClick = {
+                            navController.navigate(Route.QRScanner.route) {
+                                popUpTo(Route.AdminReservations.route) { inclusive = true }
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp)
                     ) {
@@ -240,18 +328,56 @@ fun DetailedReservationCard(
                 CardInfoChip("Personas", reserva.totalPersonas.toString())
             }
 
-            // --- NEW: Conditionally add the Servicios WIP section ---
             if (!reserva.estado.equals("pendiente", ignoreCase = true)) {
                 Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "Servicios (WIP)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Medium
-                )
+
+                val groupedServices = sampleServices.groupBy { it.nombre }
+                val totalServices = sampleServices.sumOf { it.precio }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    groupedServices.forEach { (serviceType, services) ->
+                        val count = services.size
+                        val subtotal = services.sumOf { it.precio }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "$serviceType (x$count)",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = String.format(Locale.US, "$%.2f", subtotal),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Total de Servicios",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = String.format(Locale.US, "$%.2f", totalServices),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
+
         }
     }
 }

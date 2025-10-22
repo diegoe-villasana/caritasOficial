@@ -23,8 +23,7 @@
     data object AdminReservationsDetail : Route("adminreservationsdetail/{reservaId}") {
         fun createRoute(reservaId: Int) = "adminreservationsdetail/$reservaId"
     }
-    data object AdminQR : Route("adminqr")
-    data object AdminTransport : Route("admintransport")
+    data object AdminServices : Route("adminservices")
     data object AdminVolunteers : Route("adminvolunteers")
     data object Profile : Route("profile")
     data object Settings : Route("settings")
@@ -35,7 +34,6 @@
         data object QRScanner: Route("qrScanner")
 
         data object QrCode : Route("qr/{qr_code_url}?posada={posada}&personas={personas}&fecha={fecha}&telefono={telefono}") {
-            // 2. UPDATE THE HELPER FUNCTION
             fun createRoute(
                 qrCodeUrl: String?,
                 posada: String?,
@@ -43,12 +41,10 @@
                 fecha: String?,
                 telefono: String?
             ): String {
-                // Encode each parameter to handle special characters like spaces or slashes
                 val encodedPosada = URLEncoder.encode(posada, "UTF-8")
                 val encodedFecha = URLEncoder.encode(fecha, "UTF-8")
                 val encodedTelefono = URLEncoder.encode(telefono, "UTF-8")
 
-                // Build the final route string
                 return "qr/$qrCodeUrl?posada=$encodedPosada&personas=$personas&fecha=$encodedFecha&telefono=$encodedTelefono"
             }
         }

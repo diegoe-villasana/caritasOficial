@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,7 +61,7 @@ import com.example.template2025.viewModel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
+import kotlin.text.Typography.registered
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -70,32 +71,25 @@ fun AdminHomeScreen(
 ) {
     val posadaState by vm.posadaState.collectAsState()
     val reservaState by vm.reservaState.collectAsState()
+    val voluntarioState by vm.voluntarioState.collectAsState()
 
     var isDropdownExpanded by remember { mutableStateOf(false) }
-    var selectedPosadaName by remember { mutableStateOf("") }
+    var selectedPosadaName by remember { mutableStateOf("Todos los albergues") }
     val posadaOptions = listOf("Todos los albergues") + posadaState.posadas.map { it.nombre }
 
-    LaunchedEffect(Unit) {
-        vm.getPosadas()
-    }
-
-    LaunchedEffect(posadaState.posadas) {
-        if (posadaState.posadas.isNotEmpty() && selectedPosadaName.isEmpty()) {
-            selectedPosadaName = "Todos los albergues"
-        }
-    }
-
     LaunchedEffect(selectedPosadaName) {
-        if (selectedPosadaName.isEmpty()) {
-            return@LaunchedEffect
+        if (posadaState.posadas.isEmpty()) {
+            vm.getPosadas()
         }
 
         if (selectedPosadaName == "Todos los albergues") {
             vm.getReservas()
+            vm.getVoluntarios()
         } else {
             val selectedPosada = posadaState.posadas.find { it.nombre == selectedPosadaName }
             selectedPosada?.let {
                 vm.getReservasByPosada(it.id)
+                vm.getVoluntarios()
             }
         }
     }
@@ -158,7 +152,6 @@ fun AdminHomeScreen(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
-            // --- Dropdown remains here as it only depends on posadaState, which is already loaded ---
             ExposedDropdownMenuBox(
                 expanded = isDropdownExpanded,
                 onExpandedChange = { isDropdownExpanded = it },
@@ -231,16 +224,37 @@ fun AdminHomeScreen(
                     }
                 }
                 reservaState.error != null -> {
-                    Text(
-                        text = "Error: ${reservaState.error}",
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
-                    )
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Error: ${reservaState.error}",
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Button(onClick = {
+                            val currentSelection = selectedPosadaName
+                            selectedPosadaName = ""
+                            selectedPosadaName = currentSelection
+                        }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Reintentar")
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("Reintentar")
+                        }
+                    }
                 }
                 else -> {
+                    val occupiedColor = Color(0xFFD32F2F)
+                    val freeColor = Color(0xFF388E3C)
+                    val pendingColor = Color(0xFFFBC02D)
+                    val primaryColor = MaterialTheme.colorScheme.primary
+
+
                     Card(
                         modifier = Modifier.fillMaxWidth(0.9f),
                         shape = RoundedCornerShape(8.dp),
@@ -250,41 +264,140 @@ fun AdminHomeScreen(
                         )
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Resumen", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(12.dp))
-
                             if (selectedPosadaName == "Todos los albergues") {
-                                posadaState.posadas.forEach { posada ->
+                                posadaState.posadas.forEachIndexed { index, posada ->
                                     val reservasForPosada = reservaState.reservas.filter { it.posadaId == posada.id }
-                                    val pending = reservasForPosada.count { it.estado.equals("pendiente", ignoreCase = true) }
-                                    val registered = reservasForPosada.size - pending
 
-                                    Text(posada.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    val pendingPeople = reservasForPosada.filter { it.estado.equals("pendiente", ignoreCase = true) }.sumOf { it.totalPersonas }
+                                    val occupiedPeople = reservasForPosada.filter { it.estado.equals("checkin", ignoreCase = true) }.sumOf { it.totalPersonas }
+                                    val available = posada.capacidadTotal - occupiedPeople - pendingPeople
 
-                                    SummaryItem(
-                                        occupied = posada.capacidadTotal - posada.capacidadDisponible,
-                                        unoccupied = posada.capacidadDisponible,
-                                        totalSpaces = posada.capacidadTotal,
-                                        reservasPendientes = pending,
-                                        reservasRegistradas = registered,
-                                        volunteersCount = 0 // WIP
-                                    )
+                                    val pendingReservations = reservasForPosada.count { it.estado.equals("pendiente", ignoreCase = true) }
+                                    val registeredReservations = reservasForPosada.count { it.estado.equals("checkin", ignoreCase = true) }
+
+                                    val pendingVoluntarios = voluntarioState.voluntarios.count { it.posadaId == posada.id && it.estado.equals("pendiente", ignoreCase = true) }
+                                    val registeredVoluntarios = voluntarioState.voluntarios.count { it.posadaId == posada.id && it.estado.equals("checkin", ignoreCase = true) }
+
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        ) {
+                                            Text(
+                                                text = posada.nombre,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                        SummarySection(
+                                            title = "Capacidad",
+                                            stats = listOf(
+                                                "Ocupados" to occupiedPeople.toString(),
+                                                "Reservados" to pendingPeople.toString()
+                                            ),
+                                            colors = listOf(occupiedColor, pendingColor)
+                                        )
+                                        SummarySection(
+                                            title = "",
+                                            stats = listOf(
+                                                "Disponibles" to available.toString(),
+                                                "Total" to posada.capacidadTotal.toString()
+                                            ),
+                                            colors = listOf(freeColor, primaryColor)
+                                        )
+                                        SummarySection(
+                                            title = "Reservas",
+                                            stats = listOf(
+                                                "Pendientes" to pendingReservations.toString(),
+                                                "Registradas" to registeredReservations.toString()
+                                            ),
+                                            colors = listOf(pendingColor, primaryColor)
+                                        )
+                                        SummarySection(
+                                            title = "Voluntarios",
+                                            stats = listOf(
+                                                "Pendientes" to pendingVoluntarios.toString(),
+                                                "Registrados" to registeredVoluntarios.toString()
+                                            ),
+                                            colors = listOf(pendingColor, primaryColor)
+                                        )
+                                    }
+
+                                    if (index < posadaState.posadas.lastIndex) {
+                                        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                                    }
                                 }
                             } else {
                                 val selectedPosada = posadaState.posadas.find { it.nombre == selectedPosadaName }
                                 selectedPosada?.let { posada ->
+                                    val reservasForPosada = reservaState.reservas
 
-                                    val pending = reservaState.reservas.count { it.estado.equals("pendiente", ignoreCase = true) }
-                                    val registered = reservaState.reservas.size - pending
+                                    val pendingPeople = reservasForPosada.filter { it.estado.equals("pendiente", ignoreCase = true) }.sumOf { it.totalPersonas }
+                                    val occupiedPeople = reservasForPosada.filter { it.estado.equals("checkin", ignoreCase = true) }.sumOf { it.totalPersonas }
+                                    val available = posada.capacidadTotal - occupiedPeople - pendingPeople
 
-                                    SummaryItem(
-                                        occupied = posada.capacidadTotal - posada.capacidadDisponible,
-                                        unoccupied = posada.capacidadDisponible,
-                                        totalSpaces = posada.capacidadTotal,
-                                        reservasPendientes = pending,
-                                        reservasRegistradas = registered,
-                                        volunteersCount = 0 // WIP
-                                    )
+                                    val pendingReservations = reservasForPosada.count { it.estado.equals("pendiente", ignoreCase = true) }
+                                    val registeredReservations = reservasForPosada.count { it.estado.equals("checkin", ignoreCase = true) }
+
+                                    val pendingVoluntarios = voluntarioState.voluntarios.count { it.posadaId == posada.id && it.estado.equals("pendiente", ignoreCase = true) }
+                                    val registeredVoluntarios = voluntarioState.voluntarios.count { it.posadaId == posada.id && it.estado.equals("checkin", ignoreCase = true) }
+
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        ) {
+                                            Text(
+                                                text = posada.nombre,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
+                                        SummarySection(
+                                            title = "Capacidad",
+                                            stats = listOf(
+                                                "Ocupados" to occupiedPeople.toString(),
+                                                "Reservados" to pendingPeople.toString()
+                                            ),
+                                            colors = listOf(occupiedColor, pendingColor)
+                                        )
+                                        SummarySection(
+                                            title = "",
+                                            stats = listOf(
+                                                "Disponibles" to available.toString(),
+                                                "Total" to posada.capacidadTotal.toString()
+                                            ),
+                                            colors = listOf(freeColor, primaryColor)
+                                        )
+                                        SummarySection(
+                                            title = "Reservas",
+                                            stats = listOf(
+                                                "Pendientes" to pendingReservations.toString(),
+                                                "Registradas" to registeredReservations.toString()
+                                            ),
+                                            colors = listOf(pendingColor, primaryColor)
+                                        )
+                                        SummarySection(
+                                            title = "Voluntarios",
+                                            stats = listOf(
+                                                "Pendientes" to pendingVoluntarios.toString(),
+                                                "Registrados" to registeredVoluntarios.toString()
+                                            ),
+                                            colors = listOf(pendingColor, primaryColor)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -345,61 +458,49 @@ fun AdminHomeScreenPreview() {
     AdminHomeScreen(vm = viewModel(), navController = rememberNavController())
 }
 
-fun getToday(): String {
-    val locale = Locale.forLanguageTag("es-MX")
-    val date = Date()
-    val sdf = SimpleDateFormat("EEEE d 'de' MMMM 'de' yyyy", locale)
-    val formattedDate = sdf.format(date)
-        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
-
-    return formattedDate.replaceFirstChar {
-        if (it.isLowerCase()) it.titlecase(locale) else it.toString()
+@Composable
+private fun SummarySection(
+    title: String,
+    stats: List<Pair<String, String>>,
+    colors: List<Color>
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        if (title.isNotBlank()) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            stats.forEachIndexed { index, (label, value) ->
+                SummaryStatBox(label = label, value = value, valueColor = colors.getOrElse(index) { Color.Unspecified })
+            }
+        }
     }
 }
-
 @Composable
-fun SummaryItem(
-    occupied: Int,
-    unoccupied: Int,
-    totalSpaces: Int,
-    reservasPendientes: Int,
-    reservasRegistradas: Int,
-    volunteersCount: Int // WIP
-) {
-    val occupiedColor = Color(0xFFD32F2F)
-    val freeColor = Color(0xFF388E3C)
-    val pendingColor = Color(0xFFFBC02D)
-    val registeredColor = MaterialTheme.colorScheme.primary
-
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        com.google.accompanist.flowlayout.FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            mainAxisSpacing = 8.dp,
-            crossAxisSpacing = 8.dp,
-            mainAxisAlignment = com.google.accompanist.flowlayout.FlowMainAxisAlignment.SpaceEvenly
+private fun RowScope.SummaryStatBox(label: String, value: String, valueColor: Color) {
+    Card(shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha =0.3f)),
+        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.2f)),
+        modifier = Modifier
+            .weight(1f)
+            .padding(horizontal = 4.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
         ) {
-            StatBox(label = "Ocupados", value = "$occupied", valueColor = occupiedColor)
-            StatBox(label = "Libres", value = "$unoccupied", valueColor = freeColor)
-            StatBox(label = "Total", value = "$totalSpaces")
+            Text(label, style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+            Text(
+                value,
+                style = MaterialTheme.typography.titleMedium,
+                color = valueColor
+            )
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        com.google.accompanist.flowlayout.FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            mainAxisSpacing = 8.dp,
-            crossAxisSpacing = 8.dp,
-            mainAxisAlignment = com.google.accompanist.flowlayout.FlowMainAxisAlignment.SpaceEvenly
-        ) {
-            StatBox(label = "Pendientes", value = "$reservasPendientes", valueColor = pendingColor)
-            StatBox(label = "Registradas", value = "$reservasRegistradas", valueColor = registeredColor)
-            StatBox(label = "Voluntarios", value = "$volunteersCount")
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Spacer(modifier = Modifier.height(10.dp))
-        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
     }
 }
 
@@ -523,6 +624,18 @@ fun StatBox(
     }
 }
 
+
+fun getToday(): String {
+    val locale = Locale.forLanguageTag("es-MX")
+    val date = Date()
+    val sdf = SimpleDateFormat("EEEE d 'de' MMMM 'de' yyyy", locale)
+    val formattedDate = sdf.format(date)
+        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+
+    return formattedDate.replaceFirstChar {
+        if (it.isLowerCase()) it.titlecase(locale) else it.toString()
+    }
+}
 private fun formatReservationDate(dateString: String): String {
     val inputLocale = Locale.getDefault()
     val outputLocale = Locale.forLanguageTag("es-MX")

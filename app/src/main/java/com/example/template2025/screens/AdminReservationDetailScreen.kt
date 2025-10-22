@@ -1,7 +1,10 @@
 package com.example.template2025.screens
 
 import android.widget.Toast
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -20,11 +23,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -59,7 +68,44 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
+import com.example.template2025.components.Servicio
+import com.example.template2025.navigation.Route
 
+
+private val sampleServices = listOf(
+    Servicio(
+        "Transporte",
+        "22 / Oct / 2025",
+        "14:30",
+        150.00
+    ),
+    Servicio(
+        "Comida",
+        "22 / Oct / 2025",
+        "20:00",
+        75.50
+    ),
+    Servicio(
+        "Lavandería",
+        "23 / Oct / 2025",
+        "11:00",
+        50.00
+    ),
+    Servicio(
+        "Comida",
+        "23 / Oct / 2025",
+        "12:30",
+        85.00
+    ),
+    Servicio(
+        "Transporte",
+        "24 / Oct / 2025",
+        "09:00",
+        25.00
+    )
+)
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AdminReservationDetailScreen(
     navController: NavController,
@@ -70,6 +116,7 @@ fun AdminReservationDetailScreen(
     val scope = rememberCoroutineScope()
     var showCancelDialog by remember { mutableStateOf(false) }
     var showFinalizeDialog by remember { mutableStateOf(false) }
+    var showPayDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = reservaId) {
         vm.fetchReservaById(reservaId)
@@ -190,233 +237,330 @@ fun AdminReservationDetailScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Volver"
-                )
-            }
-            Text(
-                text = "Detalles de la Reserva",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        when {
-            detailState.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 100.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            detailState.error != null -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 100.dp, start = 16.dp, end = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Error: ${detailState.error}",
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-            reserva != null -> {
-                Column(
-                    modifier = Modifier
-                        .padding(20.dp)
-                        .fillMaxWidth()
-                ) {
-
-                    val (statusText, statusColor) = when {
-                        reserva.estado.equals("pendiente", ignoreCase = true) -> "Pendiente" to Color(0xFFFBC02D)
-                        reserva.estado.equals("checkin", ignoreCase = true) -> "Registrado" to MaterialTheme.colorScheme.primary
-                        else -> reserva.estado.replaceFirstChar { it.uppercase() } to Color.Gray
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = statusColor.copy(alpha = 0.15f),
-                        contentColor = statusColor
-                    ) {
-                        Text(
-                            text = statusText,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = posada?.nombre ?: "Albergue no encontrado",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    InfoItem("Solicitante", reserva.nombreSolicitante)
-
-                    val annotatedPhoneString = formatPhoneNumber(reserva.telefono, reserva.paisIso)
-                    val uriHandler = LocalUriHandler.current
-
-                    Column(modifier = Modifier.padding(vertical = 6.dp)) {
-                        Text(
-                            text = "Teléfono",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = Color.Gray,
-                            fontWeight = FontWeight.Medium)
-
-                        var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
-
-                        Text(
-                            text = annotatedPhoneString,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                            onTextLayout = { result ->
-                                textLayoutResult = result
-                            },
-                            modifier = Modifier.pointerInput(Unit) {
-                                detectTapGestures { offset ->
-                                    textLayoutResult?.let { layoutResult ->
-                                        val position = layoutResult.getOffsetForPosition(offset)
-                                        annotatedPhoneString.getLinkAnnotations(position, position)
-                                            .firstOrNull()?.let { link ->
-                                                if (link.item is LinkAnnotation.Url) {
-                                                    uriHandler.openUri((link.item as LinkAnnotation.Url).url)
-                                                }
-                                            }
-                                    }
+    if (showPayDialog) {
+        AlertDialog(onDismissRequest = { showPayDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            title = { Text("Confirmar Pago", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Confirmas que se ha recibido el pago para esta reserva?") },
+            confirmButton = {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                vm.updatePagado(reservaId) { success, message ->
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                 }
                             }
+                            showPayDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Sí, Marcar como Pagado") }
+                    Button(
+                        onClick = { showPayDialog = false },
+                        colors = ButtonDefaults.outlinedButtonColors(),
+                        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("Cancelar") }
+                }
+            }
+        )
+    }
+
+    CompositionLocalProvider(LocalOverscrollFactory provides null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver"
+                    )
+                }
+                Text(
+                    text = "Detalles de la Reserva",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            when {
+                detailState.isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                detailState.error != null -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 100.dp, start = 16.dp, end = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Error: ${detailState.error}",
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
                         )
                     }
+                }
+                reserva != null -> {
+                    Column(
+                        modifier = Modifier
+                            .padding(20.dp)
+                            .fillMaxWidth()
+                    ) {
 
-                    InfoItem("País de Origen", reserva.paisIso)
-                    InfoItem("Género", reserva.generoSolicitante.replaceFirstChar { it.uppercase() })
-                    InfoItem("Fecha de Entrada", formatReservationDate(reserva.fechaEntrada))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // Main Status Tag (Unchanged)
+                            val (statusText, statusColor) = when {
+                                reserva.estado.equals("pendiente", ignoreCase = true) -> "Pendiente" to Color(0xFFFBC02D)
+                                reserva.estado.equals("checkin", ignoreCase = true) -> "Registrado" to MaterialTheme.colorScheme.primary
+                                else -> reserva.estado.replaceFirstChar { it.uppercase() } to Color.Gray
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = statusColor.copy(alpha = 0.15f),
+                                contentColor = statusColor
+                            ) {
+                                Text(
+                                    text = statusText,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                            if (reserva.estado.equals("checkin", ignoreCase = true)) {
+                                val paymentStatus = if (reserva.pagado == 1) "Pagado" else "Pendiente de Pago"
+                                val paymentColor = if (reserva.pagado == 1) Color(0xFF388E3C) else Color(0xFFD32F2F)
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = paymentColor.copy(alpha = 0.15f),
+                                    contentColor = paymentColor
+                                ) {
+                                    Text(
+                                        text = paymentStatus,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = posada?.nombre ?: "Albergue no encontrado",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    InfoItem("Total de Personas", reserva.totalPersonas.toString())
-                    InfoItem("Hombres", reserva.hombresCount.toString())
-                    InfoItem("Mujeres", reserva.mujeresCount.toString())
+                        InfoItem("Solicitante", reserva.nombreSolicitante)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        val annotatedPhoneString = formatPhoneNumber(reserva.telefono, reserva.paisIso)
+                        val uriHandler = LocalUriHandler.current
 
-                    if (reserva.estado.equals("pendiente", ignoreCase = true)) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        HorizontalDivider(thickness = 2.dp)
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                            Text(
+                                text = "Teléfono",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Medium)
 
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
+                            var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+                            Text(
+                                text = annotatedPhoneString,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                onTextLayout = { result ->
+                                    textLayoutResult = result
+                                },
+                                modifier = Modifier.pointerInput(Unit) {
+                                    detectTapGestures { offset ->
+                                        textLayoutResult?.let { layoutResult ->
+                                            val position = layoutResult.getOffsetForPosition(offset)
+                                            annotatedPhoneString.getLinkAnnotations(position, position)
+                                                .firstOrNull()?.let { link ->
+                                                    if (link.item is LinkAnnotation.Url) {
+                                                        uriHandler.openUri((link.item as LinkAnnotation.Url).url)
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+
+                        InfoItem("País de Origen", reserva.paisIso)
+                        InfoItem("Género", reserva.generoSolicitante.replaceFirstChar { it.uppercase() })
+                        InfoItem("Fecha de Entrada", formatReservationDate(reserva.fechaEntrada))
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        InfoItem("Total de Personas", reserva.totalPersonas.toString())
+                        InfoItem("Hombres", reserva.hombresCount.toString())
+                        InfoItem("Mujeres", reserva.mujeresCount.toString())
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (reserva.estado.equals("pendiente", ignoreCase = true)) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            HorizontalDivider(thickness = 2.dp)
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Button(
+                                    onClick = {
+                                        navController.navigate(Route.QRScanner.route)
+                                    },
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.QrCodeScanner,
+                                        contentDescription = "Escanear",
+                                        modifier = Modifier.size(ButtonDefaults.IconSize)
+                                    )
+                                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                                    Text("Escanear Reserva")
+                                }
+
+                                Button(
+                                    onClick = { showCancelDialog = true },
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Cancelar",
+                                        modifier = Modifier.size(ButtonDefaults.IconSize)
+                                    )
+                                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                                    Text("Cancelar Reserva")
+                                }
+                            }
+                        } else if (reserva.estado.equals("checkin", ignoreCase = true)) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            HorizontalDivider(thickness = 2.dp)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text("Servicios", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                val groupedServices = sampleServices.groupBy { it.nombre }
+                                groupedServices.forEach { (serviceType, services) ->
+                                    ExpandableServiceCard(serviceType = serviceType, services = services)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                            val total = sampleServices.sumOf { it.precio }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Total General", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.size(16.dp))
+                                Text(
+                                    String.format(Locale.US, "$%.2f", total),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
                             Button(
-                                onClick = { /* TODO: Navigate to QR Scanner */ },
+                                onClick = { showPayDialog = true },
+                                enabled = reserva.pagado != 1,
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    disabledContainerColor = Color.Gray.copy(alpha = 0.5f)
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.QrCodeScanner,
-                                    contentDescription = "Escanear",
-                                    modifier = Modifier.size(ButtonDefaults.IconSize)
-                                )
-                                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                Text("Escanear Reserva")
+                                Text("Confirmar Pago de Servicios")
                             }
 
                             Button(
-                                onClick = { showCancelDialog = true },
+                                onClick = { showFinalizeDialog = true },
+                                enabled = reserva.pagado == 1,
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    disabledContainerColor = Color.Gray.copy(alpha = 0.5f)
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
-                                    contentDescription = "Cancelar",
+                                    contentDescription = "Finalizar",
                                     modifier = Modifier.size(ButtonDefaults.IconSize)
                                 )
                                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                Text("Cancelar Reserva")
+                                Text("Finalizar Reserva")
                             }
-                        }
-                    } else {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        HorizontalDivider(thickness = 2.dp)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text("Servicios", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "Work in Progress: Aquí se mostrarán los servicios solicitados.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Button(
-                            onClick = {
-                                showFinalizeDialog = true
-                            },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Finalizar",
-                                modifier = Modifier.size(ButtonDefaults.IconSize)
-                            )
-                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("Finalizar Reserva")
                         }
                     }
                 }
-            }
-            else -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 100.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No se encontró la reserva.")
+                else -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No se encontró la reserva.")
+                    }
                 }
             }
+            Spacer(modifier = Modifier.height(24.dp))
         }
-        Spacer(modifier = Modifier.height(24.dp))
     }
+
 }
 
 @Composable
@@ -433,6 +577,80 @@ private fun InfoItem(label: String, value: String) {
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.SemiBold
         )
+    }
+}
+
+// In ExpandableServiceCard...
+@Composable
+private fun ExpandableServiceCard(
+    serviceType: String,
+    services: List<Servicio>
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val subtotal = services.sumOf { it.precio }
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "rotation"
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+        ),
+        onClick = { expanded = !expanded }
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(serviceType, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (expanded) "Colapsar" else "Expandir",
+                        modifier = Modifier.rotate(rotationAngle)
+                    )
+                }
+                Text(
+                    String.format(Locale.US, "$%.2f", subtotal),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    services.forEach { service ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "${service.fecha} a las ${service.hora}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray
+                            )
+                            Text(
+                                String.format(Locale.US, "$%.2f", service.precio),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

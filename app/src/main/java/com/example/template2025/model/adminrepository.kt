@@ -28,7 +28,8 @@ data class Reserva(
     @SerializedName("qr_token") val qrToken: String,
     @SerializedName("estado") val estado: String,
     @SerializedName("created_at") val createdAt: String,
-    @SerializedName("updated_at") val updatedAt: String
+    @SerializedName("updated_at") val updatedAt: String,
+    @SerializedName("pagado") val pagado: Int
 )
 
 data class ReservasGetResponse(
@@ -49,6 +50,23 @@ data class UpdateEstadoRequest(
 
 data class UpdateStatusRequest(
     @SerializedName("new_status") val status: String
+)
+
+data class UpdatePagadoRequest(
+    @SerializedName("new_status") val newStatus: Boolean
+)
+
+data class Voluntario(
+    @SerializedName("ID_Voluntario") val id: Int,
+    @SerializedName("Num_Tel") val telefono: String,
+    @SerializedName("estado") val estado: String,
+    @SerializedName("posada_id") val posadaId: Int,
+)
+
+data class VoluntariosGetResponse(
+    val success: Boolean,
+    @SerializedName("msg") val message: String,
+    val data: List<Voluntario>
 )
 
 class AdminRepository {
@@ -194,15 +212,15 @@ class AdminRepository {
             }
         } catch (e: AdminSessionExpiredException) {
             throw e
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Result.failure(Exception("No se pudo conectar al servidor. Revisa tu conexión a internet."))
         }
     }
 
-    suspend fun updateReservationStatus(qrToken: String, newStatus: String): Result<Unit> {
+    suspend fun markReservaAsPaid(reservaId: Int): Result<Unit> {
         return try {
-            val request = UpdateStatusRequest(newStatus)
-            val response = ApiClient.api.updateReservationStatus(qrToken, request)
+            val request = UpdatePagadoRequest(newStatus = true)
+            val response = ApiClient.api.adminMarkAsPaid(reservaId, request)
 
             if (response.isSuccessful && response.body()?.success == true) {
                 Result.success(Unit)
@@ -214,14 +232,73 @@ class AdminRepository {
                 val errorMessage = if (errorBody != null) {
                     Gson().fromJson(errorBody, ErrorResponse::class.java).msg
                 } else {
-                    "Error al actualizar el estado."
+                    "Error al marcar como pagado."
                 }
                 Result.failure(Exception(errorMessage))
             }
         } catch (e: AdminSessionExpiredException) {
             throw e
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Result.failure(Exception("No se pudo conectar al servidor. Revisa tu conexión a internet."))
         }
     }
+
+    suspend fun getVoluntarios(): Result<List<Voluntario>> {
+        return try {
+            val response = ApiClient.api.adminGetVoluntarios()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.data)
+            } else {
+                if (response.code() == 401) throw AdminSessionExpiredException("Sesión expirada")
+                val errorMsg = response.errorBody()?.string()?.let {
+                    Gson().fromJson(it, ErrorResponse::class.java).msg
+                } ?: "Error al obtener voluntarios."
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: AdminSessionExpiredException) {
+            throw e
+        } catch (_: Exception) {
+            Result.failure(Exception("No se pudo conectar al servidor."))
+        }
+    }
+
+    suspend fun updateVoluntarioEstado(voluntarioId: Int, nuevoEstado: String): Result<Unit> {
+        return try {
+            val request = UpdateEstadoRequest(estado = nuevoEstado)
+            val response = ApiClient.api.adminUpdateVoluntarioEstado(voluntarioId, request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                if (response.code() == 401) throw AdminSessionExpiredException("Sesión expirada")
+                val errorMsg = response.errorBody()?.string()?.let {
+                    Gson().fromJson(it, ErrorResponse::class.java).msg
+                } ?: "Error al actualizar el estado."
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: AdminSessionExpiredException) {
+            throw e
+        } catch (_: Exception) {
+            Result.failure(Exception("No se pudo conectar al servidor."))
+        }
+    }
+
+    suspend fun deleteVoluntario(voluntarioId: Int): Result<Unit> {
+        return try {
+            val response = ApiClient.api.adminDeleteVoluntario(voluntarioId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                if (response.code() == 401) throw AdminSessionExpiredException("Sesión expirada")
+                val errorMsg = response.errorBody()?.string()?.let {
+                    Gson().fromJson(it, ErrorResponse::class.java).msg
+                } ?: "Error al eliminar voluntario."
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: AdminSessionExpiredException) {
+            throw e
+        } catch (_: Exception) {
+            Result.failure(Exception("No se pudo conectar al servidor."))
+        }
+    }
+
 }

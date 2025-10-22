@@ -471,14 +471,17 @@ fun reservas(navController: NavController){
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontSize = 20.sp
             ))
-        Text("Al confirmar se generara un QR para presentar al Transportista",
+        Text("Al confirmar se generara una solicitud del servicio correspondiente",
             color = Color.Black,
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontSize = 12.sp
             ))
         Spacer(Modifier.height(16.dp))
 
-        ExposedDropdownMenuBox(expanded = expandedservicio, onExpandedChange ={expandedservicio = !expandedservicio}, modifier = Modifier.fillMaxWidth()) {
+        ExposedDropdownMenuBox(
+            expanded = expandedservicio,
+            onExpandedChange ={expandedservicio = !expandedservicio},
+            modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = servicio,
                 onValueChange = {},
@@ -489,7 +492,6 @@ fun reservas(navController: NavController){
                 },
                 modifier = Modifier
                     .menuAnchor()
-
                     .height(70.dp)
                     .padding(horizontal = 60.dp)
                 ,

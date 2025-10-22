@@ -1,4 +1,4 @@
- package com.example.template2025
+package com.example.template2025
 
 import android.graphics.Bitmap
 import android.content.Intent
@@ -58,6 +58,8 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.set
 import androidx.core.graphics.createBitmap
+
+import com.example.template2025.screens.reservas
 
  class ChatActivity : ComponentActivity() {
      @OptIn(ExperimentalMaterial3Api::class)
@@ -152,7 +154,6 @@ fun AppRoot(modifier: Modifier = Modifier) {
             )
         }
 
-        // AUTH FLOW
         composable(Route.Auth.route) {
             AuthNavHost(
                 vm = vm,
@@ -177,7 +178,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
             )
         }
 
-        // MAIN FLOW
+
         composable(Route.GuestMain.route) {
             MainScaffold(
                 vm = vm,
@@ -273,6 +274,10 @@ fun AuthNavHost(
                 entryDate = fecha,
                 phone = telefono
             )
+        }
+        
+        composable(Route.Servicios.route) {
+            reservas(navController = nav)
         }
     }
 }

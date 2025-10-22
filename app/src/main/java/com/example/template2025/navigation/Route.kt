@@ -16,6 +16,7 @@
         data object Register : Route("register")
 
     // Main internas
+    data object  Servicios: Route("servicios")
     data object Home : Route("home")
     data object AdminHome : Route("adminhome")
     data object AdminReservations : Route("adminreservations")

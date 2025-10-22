@@ -33,6 +33,11 @@ import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.set
 import androidx.navigation.NavController
 import java.net.URLDecoder
+//imports mios de reservas
+import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import com.example.template2025.navigation.Route
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -139,6 +144,17 @@ fun QRScreen(
                     modifier = Modifier.size(250.dp)
                 )
             }
+            Spacer(modifier = Modifier.height(24.dp)) // Un espacio para separar
+
+            Button(
+                onClick = {
+                    navController.navigate(Route.Servicios.route)
+                }
+            ) {
+                Text("Ver mis Servicios")
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
         IconButton(
             onClick = { navController.navigateUp() },

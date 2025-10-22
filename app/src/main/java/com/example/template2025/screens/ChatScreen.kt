@@ -67,7 +67,7 @@ fun ChatScreen(modifier: Modifier = Modifier) {
                     input = ""
                     scope.launch {
                         delay(600)
-                        messages.add(ChatMessage("Recibido: $text", fromMe = false, time = currentTimeString()))
+                        messages.add(ChatMessage("En un momento un administrador se pondrá en contacto contigo.", fromMe = false, time = currentTimeString()))
                     }
                 }
             }

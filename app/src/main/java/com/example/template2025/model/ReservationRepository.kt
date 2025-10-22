@@ -8,6 +8,8 @@ import com.google.gson.annotations.SerializedName
 import java.time.format.DateTimeFormatter
 import java.time.LocalDate
 
+class GuestSessionExpiredException(message: String) : Exception(message)
+
 data class CreateReservationRequest(
     @SerializedName("posadaId") val posadaId: Int,
     @SerializedName("fecha_entrada") val entryDate: String,
@@ -31,7 +33,11 @@ data class CheckReservationResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
     @SerializedName("reservationStatus") val reservationStatus: String?, // "pendiente", "checkin", etc.
-    @SerializedName("qrCodeUrl") val qrCodeUrl: String?
+    @SerializedName("qrCodeUrl") val qrCodeUrl: String?,
+    @SerializedName("personas") val personas: Number?,
+    @SerializedName("entrada") val entrada: String?,
+    @SerializedName("telefono") val telefono: String?,
+    @SerializedName("posada") val posada: String?
 )
 
 // 2. AÑADE la respuesta que esperamos
@@ -42,6 +48,12 @@ data class CheckReservationRequest(
     @SerializedName("codigoPais") val dialCode: String
 )
 
+data class CapacidadDisponibleResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("posada_id") val posadaId: Int,
+    @SerializedName("fecha") val fecha: String,
+    @SerializedName("capacidad_disponible") val capacidadDisponible: Int
+)
 
 class ReservationRepository {
 
@@ -59,7 +71,8 @@ class ReservationRepository {
                 "${uiState.applicantInfo.country.dialCode}${uiState.applicantInfo.phone}"
 
             val request = CreateReservationRequest(
-                posadaId = uiState.selectedPosada?.id?:0, // Usamos 'id' directamente, que ahora debe ser Int en Posadas
+                posadaId = uiState.selectedPosada?.id
+                    ?: 0, // Usamos 'id' directamente, que ahora debe ser Int en Posadas
                 entryDate = formattedDate,
                 menCount = uiState.menCount,
                 womenCount = uiState.womenCount,
@@ -94,11 +107,6 @@ class ReservationRepository {
         dialCode: String
     ): Result<CheckReservationResponse> {
         return try {
-            val request = CheckReservationRequest(
-                fullName = fullName,
-                phone = phone,
-                dialCode = dialCode
-            )
             val response = ApiClient.api.checkReservation(
                 fullName = fullName,
                 phone = phone,
@@ -120,7 +128,25 @@ class ReservationRepository {
         }
 
     }
+
+    suspend fun getCapacidadDisponible(posadaID: Int, fecha: String): Result<Int> {
+        return try {
+            val response = ApiClient.api.getCapacidadDisponible(posadaID, fecha)
+            if (response.isSuccessful && response.body() != null && response.body()!!.success) {
+                Result.success(response.body()!!.capacidadDisponible)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Error desconocido"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Error de conexión: ${e.message}"))
+
+        }
+    }
 }
+
+
+
 
 
 

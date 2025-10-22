@@ -1,8 +1,8 @@
 package com.example.template2025.screens
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,16 +12,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -39,6 +46,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,9 +59,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -68,7 +79,8 @@ import java.time.format.DateTimeFormatter
 import com.example.template2025.viewModel.GuestViewModel
 import com.example.template2025.viewModel.ReservationUiState
 import java.time.temporal.ChronoUnit
-import kotlin.math.exp
+import com.example.template2025.avisoprivacidad.AVISO_PRIVACIDAD
+import com.example.template2025.viewModel.CapacidadState
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -84,7 +96,13 @@ fun GuestScreen(
     val posadaState by vm.posadaState.collectAsState()
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedPosadaName by remember { mutableStateOf("") }
+    val capacidadState by gvm.capacidadState.collectAsState()
 
+    LaunchedEffect(key1 = uiState.selectedPosada, key2 = uiState.entryDate) {
+        uiState.selectedPosada?.let { posada ->
+            gvm.fetchCapacidad(posada.id, uiState.entryDate)
+        }
+    }
 
     LaunchedEffect(Unit) {
         vm.getPosadas()
@@ -378,8 +396,9 @@ fun GuestScreen(
 
                 //calcular el total de guests si se ha alcanzado el limite
                 val totalGuests = uiState.menCount + uiState.womenCount
-                val capacity = vm.posadaState.value.posadas.firstOrNull()?.capacidadDisponible?: 0
-                val isCapacityReached = if(capacity > 0) totalGuests >= capacity else false
+                val capacidad = (capacidadState as? CapacidadState.Success)?.capacidad ?: 0
+                val isLoadingCapacidad = capacidadState is CapacidadState.Loading
+                val isCapacityReached = if(capacidad > 0) totalGuests >= capacidad else false
 
 
                 //Contador hombres
@@ -387,7 +406,7 @@ fun GuestScreen(
                     "Hombres",
                     count = uiState.menCount,
                     //flag para deshabilitar el boton de suma si se ha alcanzado la capacidad
-                    isIncrementEnabled = !isCapacityReached,
+                    isIncrementEnabled = !isCapacityReached && !isLoadingCapacidad,
                     minCount = if(uiState.applicantInfo.gender =="Hombre") 1 else 0,
                     onCountChange = {newCount ->
                         if(!isCapacityReached || newCount < uiState.menCount) {
@@ -401,7 +420,7 @@ fun GuestScreen(
                 Counter(
                     "Mujeres",
                     count = uiState.womenCount,
-                    isIncrementEnabled = !isCapacityReached,
+                    isIncrementEnabled = !isCapacityReached && !isLoadingCapacidad,
                     minCount = if(uiState.applicantInfo.gender =="Mujer") 1 else 0,
                     onCountChange = {newCount ->
                         if(!isCapacityReached || newCount < uiState.womenCount) {
@@ -409,21 +428,85 @@ fun GuestScreen(
                         }
                     }
                 )
-                if(capacity > 0){
-                    Text(
-                        text="Capacidad disponible: $capacity",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top=8.dp),
-                        textAlign = TextAlign.Center,
-                        color = if(isCapacityReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha=0.6f)
-                    )
+                when (capacidadState) {
+                    is CapacidadState.Loading -> {
+                        // Mientras carga, mostramos un indicador para que el usuario sepa que algo está pasando.
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = Color(0, 156, 166)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Verificando capacidad...",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                    is CapacidadState.Success -> {
+                        // Cuando tenemos éxito, mostramos el texto de capacidad como lo tenías.
+                        val capacidadActual = (capacidadState as CapacidadState.Success).capacidad
+                        if (capacidadActual > 0) {
+                            Text(
+                                text = "Capacidad disponible: $capacidadActual",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                textAlign = TextAlign.Center,
+                                // El color cambia a rojo si se alcanza la capacidad.
+                                color = if (isCapacityReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        } else if (!isLoadingCapacidad) {
+                            // Opcional: Mostrar un mensaje si la capacidad es 0.
+                            Text(
+                                text = "No hay lugares disponibles para esta fecha.",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    is CapacidadState.Error -> {
+                        // Si hay un error de red o del servidor, se lo informamos al usuario.
+                        Text(
+                            text = "No se pudo verificar la capacidad.",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    is CapacidadState.Idle -> {
+                        // Estado inicial, no mostramos nada. Se podría poner un Spacer si se necesita.
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
+            item{
+                PrivacyPolicyRow(
+                    checked = uiState.hasAcceptedPrivacyPolicy,
+                    onCheckedChange = {isChecked ->
+                        onStateChange(uiState.copy(hasAcceptedPrivacyPolicy = isChecked))
+                    }
+                )
 
+            }
 
             item {
                 Button(
@@ -431,6 +514,7 @@ fun GuestScreen(
                         gvm.confirmReservation()
 
                     },
+                    enabled = uiState.hasAcceptedPrivacyPolicy,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0,156, 166), // Color de fondo personalizado (un verde azulado oscuro)
@@ -525,7 +609,6 @@ fun PersonInfoSection(
     onGenderChange: (String, String) -> Unit, // (oldGender, newGender)
 
 ) {
-    // No necesitamos más la lista de géneros aquí, usamos los RadioButton directamente.
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         // Título de la sección
@@ -758,6 +841,99 @@ fun PhoneField(
     )
 }
 
+@Composable
+fun PrivacyPolicyRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    policyText: String = AVISO_PRIVACIDAD,
+    linkColor: Color = Color(0, 156, 166),
+    acceptOnDialogConfirm: Boolean = false // si true, marcará el checkbox al aceptar
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = { isChecked ->
+                onCheckedChange(isChecked)
+            },
+            colors = CheckboxDefaults.colors(
+                checkedColor = linkColor,
+                uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        )
+
+        val annotatedString = buildAnnotatedString {
+            append("He leído y acepto el ")
+            pushStringAnnotation(tag = "POLICY", annotation = "open")
+            withStyle(
+                style = SpanStyle(
+                    color = linkColor,
+                    fontWeight = FontWeight.Bold
+                )
+            ) {
+                append("Aviso de privacidad")
+            }
+            pop()
+        }
+
+        ClickableText(
+            text = annotatedString,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            onClick = { offset ->
+                annotatedString
+                    .getStringAnnotations(tag = "POLICY", start = offset, end = offset)
+                    .firstOrNull()
+                    ?.let {
+                        Log.d("PrivacyPolicy", "El usuario quiere ver el aviso de privacidad.")
+                        showDialog = true
+                    }
+            }
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    if (showDialog) {
+        val scrollState = rememberScrollState()
+
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Aviso de Privacidad") },
+            text = {
+                // Contenido desplazable, con altura controlada para no forzar el layout del diálogo
+                Column(
+                    modifier = Modifier
+                        .heightIn(min = 100.dp, max = 360.dp)
+                        .verticalScroll(scrollState)
+                        .fillMaxWidth()
+                ) {
+                    Text(policyText)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (acceptOnDialogConfirm) onCheckedChange(true)
+                        showDialog = false
+                    }
+                ) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+}
+
 
 data class GuestScreenState(
     val selectedPosada: Posada? = null,
@@ -766,6 +942,7 @@ data class GuestScreenState(
     val applicantInfo: PersonInfo = PersonInfo(gender = "Hombre"), // Dato del solicitante, con un valor por defecto
     val menCount: Int = 1,
     val womenCount: Int = 0,
+    val hasAcceptedPrivacyPolicy: Boolean = false,
     //CAMPOS PARA LOS ERRORES
     val selectedPosadaError: String? = null,
     val entryDateError: String? = null,

@@ -1,6 +1,7 @@
 package com.example.template2025.viewModel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
@@ -24,6 +25,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import com.example.template2025.model.CheckReservationResponse
 import com.example.template2025.screens.Country
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 data class AuthState(
     val isLoading: Boolean = false,
@@ -279,6 +282,10 @@ class GuestViewModel : ViewModel() {
     // 2. Instancia del Repositorio
     private val repository = ReservationRepository()
 
+    // Nuevo estado para almacenar la capacidad y el estado de carga
+    private val _capacidadState = MutableStateFlow<CapacidadState>(CapacidadState.Idle)
+    val capacidadState: StateFlow<CapacidadState> = _capacidadState
+
 
     private var posadasList: List<Posada> = emptyList()
 
@@ -379,14 +386,44 @@ class GuestViewModel : ViewModel() {
                 }
             }
         }
-
-
-
-
     }
     fun resetReservationState() {
         reservationState = ReservationUiState.Idle
     }
+
+    fun fetchCapacidad(posadaId: Int, fecha: String) {
+        // Ignorar si los datos no están listos
+        if (fecha.isBlank() || posadaId == -1) {
+            _capacidadState.value = CapacidadState.Idle
+            return
+        }
+
+        // Convertir la fecha de DD/MM/YYYY a YYYY-MM-DD
+        val fechaApi: String = try {
+            val localDate = LocalDate.parse(fecha, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        } catch (e: Exception) {
+            _capacidadState.value = CapacidadState.Error("Fecha inválida")
+            return
+        }
+
+        viewModelScope.launch {
+            _capacidadState.value = CapacidadState.Loading
+            val result = repository.getCapacidadDisponible(posadaId, fechaApi)
+            result.onSuccess { capacidad ->
+                _capacidadState.value = CapacidadState.Success(capacidad)
+            }.onFailure { error ->
+                _capacidadState.value = CapacidadState.Error(error.message ?: "Error desconocido")
+            }
+        }
+    }
+}
+
+sealed class CapacidadState {
+    object Idle : CapacidadState()
+    object Loading : CapacidadState()
+    data class Success(val capacidad: Int) : CapacidadState()
+    data class Error(val message: String) : CapacidadState()
 }
 
 sealed interface CheckReservationUiState {
@@ -437,3 +474,39 @@ class CheckReservationViewModel : ViewModel() {
     }
 }
 
+sealed interface ScannerUiState {
+    object Idle : ScannerUiState // Waiting to scan
+    object Loading : ScannerUiState // API call in progress
+    data class Success(val message: String) : ScannerUiState // API call succeeded
+    data class Error(val message: String) : ScannerUiState // API call failed
+}
+
+class QRScannerViewModel : ViewModel() {
+    private val repository = AdminRepository()
+
+    var uiState by mutableStateOf<ScannerUiState>(ScannerUiState.Idle)
+        private set
+
+    fun processQrToken(token: String) {
+        if (uiState is ScannerUiState.Loading) return
+
+        viewModelScope.launch {
+            uiState = ScannerUiState.Loading
+
+            val result = repository.updateReservationStatus(
+                qrToken = token,
+                newStatus = "checkin"
+            )
+
+            result.onSuccess {
+                uiState = ScannerUiState.Success("Check-in realizado con éxito.")
+            }.onFailure { error ->
+                uiState = ScannerUiState.Error(error.message ?: "Error desconocido al procesar el QR.")
+            }
+        }
+    }
+
+    fun resetState() {
+        uiState = ScannerUiState.Idle
+    }
+}

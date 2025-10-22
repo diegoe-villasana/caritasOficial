@@ -54,6 +54,16 @@ interface BackendApi {
         @Query("telefono") phone: String,
         @Query("codigoPais") dialCode: String
     ): Response<CheckReservationResponse>
+
+    @PUT("reservations/status/{qr_token}")
+    suspend fun updateReservationStatus(@Path("qr_token") qrToken: String, @Body request: UpdateStatusRequest): Response<ErrorResponse>
+
+    @GET("posadas/{id}/capacidad")
+    suspend fun getCapacidadDisponible(
+        @Path("id") posadaID: Int,
+        @Query("fecha") fecha: String
+    ): Response<CapacidadDisponibleResponse>
+
 }
 
 object ApiClient {

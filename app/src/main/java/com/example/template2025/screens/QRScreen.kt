@@ -3,12 +3,10 @@ package com.example.template2025.screens
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,10 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import com.example.template2025.R
 import com.google.zxing.BarcodeFormat
-import com.google.zxing.MultiFormatWriter
-import com.google.zxing.WriterException
 import com.google.zxing.qrcode.QRCodeWriter
-import com.journeyapps.barcodescanner.BarcodeEncoder
 import androidx.core.graphics.set
 import androidx.navigation.NavController
 import java.net.URLDecoder
@@ -43,6 +38,9 @@ import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import com.example.template2025.navigation.Route
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun QRScreen(
@@ -57,14 +55,12 @@ fun QRScreen(
         if (qrCodeUrl != null) {
             generateQrBitmap(qrCodeUrl)
         } else {
-            // Return a placeholder or empty bitmap if URL is null
             createBitmap(1, 1, Bitmap.Config.ARGB_8888)
         }
     }
 
     val decodedPosada = remember(posadaName) {
         try {
-            // Use "UTF-8" to match the encoding format
             URLDecoder.decode(posadaName, "UTF-8")
         } catch (e: Exception) {
             posadaName ?: "No disponible" // Fallback in case of error
@@ -76,6 +72,22 @@ fun QRScreen(
             URLDecoder.decode(phone, "UTF-8")
         } catch (e: Exception) {
             phone ?: "No disponible"
+        }
+    }
+
+    val formattedDate = remember(entryDate) {
+        if (entryDate == null) {
+            "No disponible"
+        } else {
+            try {
+                val zonedDateTime = ZonedDateTime.parse(entryDate)
+
+                val outputFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault())
+
+                zonedDateTime.format(outputFormatter)
+            } catch (e: Exception) {
+                entryDate.substringBefore("T") // Shows "2025-10-20" as a safe fallback
+            }
         }
     }
 
@@ -113,8 +125,8 @@ fun QRScreen(
             ) {
                 TextField("Posada", decodedPosada)
                 TextField("Personas", personCount ?: "N/A")
-                TextField("Entrada", entryDate ?: "No disponible")
-                TextField("Teléfono", "+"+decodedPhone)
+                TextField("Entrada", formattedDate ?: "No disponible")
+                TextField("Teléfono", "+$decodedPhone")
             }
 
             Text("Muestre el siguiente código QR al momento de llegar a su estadía",

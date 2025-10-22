@@ -309,7 +309,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 }.onFailure { error ->
                     _voluntarioState.value = VoluntarioState(error = error.message)
                 }
-            } catch (e: AdminSessionExpiredException) {
+            } catch (_: AdminSessionExpiredException) {
                 logout(sessionExpired = true)
             }
         }
@@ -477,7 +477,7 @@ class GuestViewModel : ViewModel() {
         val fechaApi: String = try {
             val localDate = LocalDate.parse(fecha, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
             localDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             _capacidadState.value = CapacidadState.Error("Fecha inválida")
             return
         }

@@ -61,6 +61,7 @@ data class Voluntario(
     @SerializedName("Num_Tel") val telefono: String,
     @SerializedName("estado") val estado: String,
     @SerializedName("posada_id") val posadaId: Int,
+    @SerializedName("Nombre") val nombre: String
 )
 
 data class VoluntariosGetResponse(

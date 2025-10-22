@@ -4,5 +4,6 @@ import com.google.gson.annotations.SerializedName
 
 data class VoluntarioRegistroRequest(
     @SerializedName("phone") val phone: String,
-    @SerializedName("posada_id") val posada_id: Int
+    @SerializedName("posada_id") val posadaId: Int,
+    @SerializedName("nombre") val nombre: String
 )

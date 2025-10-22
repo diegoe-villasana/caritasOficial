@@ -12,8 +12,6 @@ sealed class Route(val route: String) {
     data object User : Route("user")
     data object AdminLogin : Route("adminlogin")
     data object GuestLogin : Route("guestlogin")
-    data object Login : Route("login")
-    data object Register : Route("register")
 
     // Nueva ruta para voluntariado
     data object RegistroVoluntariado : Route("registrarse_voluntario")
@@ -33,7 +31,6 @@ sealed class Route(val route: String) {
 
     data object Guest : Route("guest_screen")
 
-    data object Services : Route("services")
     data object QRScanner: Route("qrScanner")
 
     data object QrCode : Route("qr/{qr_code_url}?posada={posada}&personas={personas}&fecha={fecha}&telefono={telefono}") {

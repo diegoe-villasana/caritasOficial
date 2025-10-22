@@ -56,7 +56,6 @@ fun AdminVolunteersScreen(
         val posadaFiltered = if (selectedPosada != null) {
             activeVolunteers.filter { it.posadaId == selectedPosada?.id }
         } else {
-            // When no shelter is selected, show nothing.
             emptyList()
         }
 
@@ -187,7 +186,9 @@ fun AdminVolunteersScreen(
                         text = "Mostrando $count $label",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
                         textAlign = TextAlign.Start
                     )
 
@@ -249,7 +250,14 @@ private fun VolunteerCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val annotatedPhoneString = formatPhoneNumber(voluntario.telefono, "MX") // Assuming MX for now
+            Text(
+                text = voluntario.nombre,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+
+            val annotatedPhoneString = formatPhoneNumber(voluntario.telefono, "MX")
             var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
             Row(
@@ -270,8 +278,13 @@ private fun VolunteerCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
+                    text = "Teléfono: ",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+                Text(
                     text = annotatedPhoneString,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.bodyMedium,
                     onTextLayout = { result ->
                         textLayoutResult = result
                     }

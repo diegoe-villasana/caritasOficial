@@ -57,6 +57,15 @@ interface BackendApi {
     @DELETE("admin/voluntarios/delete/{voluntario_id}")
     suspend fun adminDeleteVoluntario(@Path("voluntario_id") voluntarioId: Int): Response<ErrorResponse>
 
+    @GET("admin/servicios")
+    suspend fun adminGetServicios(): Response<ServiciosGetResponse>
+
+    @PUT("admin/servicios/estado/{id}")
+    suspend fun adminUpdateServicioEstado(@Path("id") servicioId: Int, @Body request: UpdateEstadoRequest): Response<ErrorResponse>
+
+    @DELETE("admin/servicios/delete/{id}")
+    suspend fun adminDeleteServicio(@Path("id") servicioId: Int): Response<ErrorResponse>
+
     @POST("reservations/create")
     suspend fun createReservation(@Body request: CreateReservationRequest): Response<CreateReservationResponse>
 

@@ -24,48 +24,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.template2025.components.Servicios
 import com.example.template2025.model.Posada
 import com.example.template2025.model.Reserva
+import com.example.template2025.model.Servicio
 import com.example.template2025.navigation.Route
 import com.example.template2025.viewModel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.text.contains
-
-
-private val sampleServices = listOf(
-    Servicios(
-        "Transporte",
-        "22 / Oct / 2025",
-        "14:30",
-        150.00
-    ),
-    Servicios(
-        "Comida",
-        "22 / Oct / 2025",
-        "20:00",
-        75.50
-    ),
-    Servicios(
-        "Lavandería",
-        "23 / Oct / 2025",
-        "11:00",
-        50.00
-    ),
-    Servicios(
-        "Comida",
-        "23 / Oct / 2025",
-        "12:30",
-        85.00
-    ),
-    Servicios(
-        "Transporte",
-        "24 / Oct / 2025",
-        "09:00",
-        25.00
-    )
-)
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +41,7 @@ fun AdminReservationScreen(
 ) {
     val posadaState by vm.posadaState.collectAsState()
     val reservaState by vm.reservaState.collectAsState()
+    val servicioState by vm.servicioState.collectAsState()
 
     var selectedPosada by remember { mutableStateOf<Posada?>(null) }
     var selectedStatus by remember { mutableStateOf("Todos") }
@@ -104,6 +71,7 @@ fun AdminReservationScreen(
     LaunchedEffect(selectedPosada, selectedStatus) {
         selectedPosada?.let {
             vm.getReservasByPosada(it.id)
+            vm.getServicios()
         }
     }
 
@@ -280,8 +248,14 @@ fun AdminReservationScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(filteredReservas, key = { it.id }) { reserva ->
+                            // Filter the services for the current reservation card
+                            val servicesForThisReservation = servicioState.servicios.filter {
+                                it.reservaId == reserva.id && it.estado.equals("aceptado", ignoreCase = true)
+                            }
+
                             DetailedReservationCard(
                                 reserva = reserva,
+                                servicios = servicesForThisReservation,
                                 onCardClick = {
                                     navController.navigate(Route.AdminReservationsDetail.createRoute(reserva.id))
                                 }
@@ -299,6 +273,7 @@ fun AdminReservationScreen(
 @Composable
 fun DetailedReservationCard(
     reserva: Reserva,
+    servicios: List<Servicio>,
     onCardClick: () -> Unit
 ) {
     Card(
@@ -333,50 +308,61 @@ fun DetailedReservationCard(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
 
-                val groupedServices = sampleServices.groupBy { it.nombre }
-                val totalServices = sampleServices.sumOf { it.precio }
+                val groupedServices = servicios.groupBy { it.nombreServicio }
+                val totalServices = servicios.sumOf { calculateServicePrice(it.nombreServicio) }
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    groupedServices.forEach { (serviceType, services) ->
-                        val count = services.size
-                        val subtotal = services.sumOf { it.precio }
+                if (servicios.isEmpty()) {
+                    Text(
+                        "No hay servicios pendientes",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        groupedServices.forEach { (serviceType, serviceList) ->
+                            val count = serviceList.size
+                            val subtotal = serviceList.sumOf { calculateServicePrice(it.nombreServicio) }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "$serviceType (x$count)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = String.format(Locale.US, "$%.2f", subtotal),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "$serviceType (x$count)",
+                                text = "Total de Servicios",
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = String.format(Locale.US, "$%.2f", subtotal),
+                                text = String.format(Locale.US, "$%.2f", totalServices),
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-                    HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Total de Servicios",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = String.format(Locale.US, "$%.2f", totalServices),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
                 }
             }
+
 
         }
     }
@@ -387,6 +373,22 @@ fun CardInfoChip(label: String, value: String, valueColor: Color = Color.Unspeci
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
         Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = valueColor)
+    }
+}
+
+private fun calculateServicePrice(serviceName: String): Double {
+    val lowerCaseName = serviceName.lowercase()
+    return when {
+        lowerCaseName.contains("psicológica") -> 0.0
+        lowerCaseName.contains("dentista") -> 0.0
+        lowerCaseName.contains("documento") -> 5.0
+        lowerCaseName.contains("desayuno") -> 15.0
+        lowerCaseName.contains("comida") -> 15.0
+        lowerCaseName.contains("cena") -> 10.0
+        lowerCaseName.contains("lavandería") -> 10.0
+        lowerCaseName.contains("regadera") -> 10.0
+        lowerCaseName.contains("transporte") -> 20.0
+        else -> 0.0
     }
 }
 

@@ -68,42 +68,8 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
-import com.example.template2025.components.Servicios
+import com.example.template2025.model.Servicio
 import com.example.template2025.navigation.Route
-
-
-private val sampleServices = listOf(
-    Servicios(
-        "Transporte",
-        "22 / Oct / 2025",
-        "14:30",
-        150.00
-    ),
-    Servicios(
-        "Comida",
-        "22 / Oct / 2025",
-        "20:00",
-        75.50
-    ),
-    Servicios(
-        "Lavandería",
-        "23 / Oct / 2025",
-        "11:00",
-        50.00
-    ),
-    Servicios(
-        "Comida",
-        "23 / Oct / 2025",
-        "12:30",
-        85.00
-    ),
-    Servicios(
-        "Transporte",
-        "24 / Oct / 2025",
-        "09:00",
-        25.00
-    )
-)
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -120,9 +86,11 @@ fun AdminReservationDetailScreen(
 
     LaunchedEffect(key1 = reservaId) {
         vm.fetchReservaById(reservaId)
+        vm.getServicios()
     }
 
     val detailState by vm.reservaDetailState.collectAsState()
+    val servicioState by vm.servicioState.collectAsState()
     val reserva = detailState.reserva
     val posada = reserva?.let { res -> vm.posadaState.value.posadas.find { it.id == res.posadaId } }
 
@@ -479,13 +447,30 @@ fun AdminReservationDetailScreen(
                             Text("Servicios", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                val groupedServices = sampleServices.groupBy { it.nombre }
-                                groupedServices.forEach { (serviceType, services) ->
-                                    ExpandableServiceCard(serviceType = serviceType, services = services)
+                            val servicesForThisReservation = servicioState.servicios.filter {
+                                it.reservaId == reserva.id && it.estado != "pagado"
+                            }
+
+                            if (servicesForThisReservation.isEmpty()) {
+                                Text(
+                                    "No hay servicios registrados para esta reserva.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.Gray
+                                )
+                            } else {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // Group the real services by name
+                                    val groupedServices = servicesForThisReservation.groupBy { it.nombreServicio }
+
+                                    groupedServices.forEach { (serviceType, services) ->
+                                        ExpandableServiceCard(
+                                            serviceType = serviceType,
+                                            services = services // Pass the real filtered services
+                                        )
+                                    }
                                 }
                             }
 
@@ -493,7 +478,7 @@ fun AdminReservationDetailScreen(
 
                             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                            val total = sampleServices.sumOf { it.precio }
+                            val total = servicesForThisReservation.sumOf { calculateServicePrice(it.nombreServicio) }
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -527,7 +512,6 @@ fun AdminReservationDetailScreen(
 
                             Button(
                                 onClick = { showFinalizeDialog = true },
-                                enabled = reserva.pagado == 1,
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.error,
@@ -584,10 +568,10 @@ private fun InfoItem(label: String, value: String) {
 @Composable
 private fun ExpandableServiceCard(
     serviceType: String,
-    services: List<Servicios>
+    services: List<Servicio>
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val subtotal = services.sumOf { it.precio }
+    val subtotal = services.sumOf { calculateServicePrice(it.nombreServicio) }
     val rotationAngle by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         label = "rotation"
@@ -637,12 +621,12 @@ private fun ExpandableServiceCard(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "${service.fecha} a las ${service.hora}",
+                                service.nombreServicio,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.Gray
                             )
                             Text(
-                                String.format(Locale.US, "$%.2f", service.precio),
+                                String.format(Locale.US, "$%.2f", calculateServicePrice(service.nombreServicio)),
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium
                             )
@@ -725,3 +709,19 @@ private fun formatPhoneNumber(fullPhoneNumber: String, iso: String): AnnotatedSt
         )
     }
 }
+
+    private fun calculateServicePrice(serviceName: String): Double {
+        val lowerCaseName = serviceName.lowercase() // Convert to lowercase for consistent matching
+        return when {
+            lowerCaseName.contains("psicológica") -> 0.0
+            lowerCaseName.contains("dentista") -> 0.0
+            lowerCaseName.contains("documento") -> 5.0
+            lowerCaseName.contains("desayuno") -> 15.0
+            lowerCaseName.contains("comida") -> 15.0
+            lowerCaseName.contains("cena") -> 10.0
+            lowerCaseName.contains("lavandería") -> 10.0
+            lowerCaseName.contains("regadera") -> 10.0
+            lowerCaseName.contains("transporte") -> 20.0 // Corrected from "traslado"
+            else -> 0.0
+        }
+    }

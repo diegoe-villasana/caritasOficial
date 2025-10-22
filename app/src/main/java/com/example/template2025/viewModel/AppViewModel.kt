@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import com.example.template2025.model.CheckReservationResponse
+import com.example.template2025.model.Servicio
 import com.example.template2025.model.Voluntario
 import com.example.template2025.screens.Country
 import java.time.LocalDate
@@ -60,6 +61,12 @@ data class VoluntarioState(
     val error: String? = null
 )
 
+data class ServicioState(
+    val isLoading: Boolean = false,
+    val servicios: List<Servicio> = emptyList(),
+    val error: String? = null
+)
+
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val dataStore = AppDataStore(app)
     private val adminRepository = AdminRepository()
@@ -78,6 +85,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _voluntarioState = MutableStateFlow(VoluntarioState())
     val voluntarioState: StateFlow<VoluntarioState> = _voluntarioState.asStateFlow()
+
+    private val _servicioState = MutableStateFlow(ServicioState())
+    val servicioState: StateFlow<ServicioState> = _servicioState.asStateFlow()
 
     private val _navigateToAuth = MutableStateFlow(false)
     val navigateToAuth: StateFlow<Boolean> = _navigateToAuth.asStateFlow()
@@ -338,6 +348,56 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val result = adminRepository.updateVoluntarioEstado(voluntarioId, "checkout")
             result.onSuccess {
                 getVoluntarios()
+            }
+        }
+    }
+
+    fun getServicios() {
+        viewModelScope.launch {
+            _servicioState.value = ServicioState(isLoading = true)
+            try {
+                val result = adminRepository.getServicios()
+                result.onSuccess { data ->
+                    _servicioState.value = ServicioState(servicios = data)
+                }.onFailure { error ->
+                    _servicioState.value = ServicioState(error = error.message)
+                }
+            } catch (e: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
+            }
+        }
+    }
+
+    fun acceptServicio(servicioId: Int) {
+        viewModelScope.launch {
+            try {
+                // "Accepting" a service moves its status to "sin pagar"
+                val result = adminRepository.updateServicioEstado(servicioId, "aceptado")
+                result.onSuccess {
+                    Log.d("ViewModel", "Service $servicioId accepted. Refreshing list.")
+                    getServicios() // This re-fetches from the server and updates the UI
+                }.onFailure { error ->
+                    Log.e("ViewModel", "Failed to accept service $servicioId: ${error.message}")
+                }
+            } catch (e: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
+            }
+        }
+    }
+
+    fun rejectServicio(servicioId: Int) {
+        viewModelScope.launch {
+            try {
+                // "Rejecting" a service deletes it
+                val result = adminRepository.deleteServicio(servicioId)
+                result.onSuccess {
+                    Log.d("ViewModel", "Service $servicioId rejected. Refreshing list.")
+                    getServicios() // This re-fetches from the server and updates the UI
+                }.onFailure { error ->
+                    Log.e("ViewModel", "Failed to reject service $servicioId: ${error.message}")
+                }
+            } catch (e: AdminSessionExpiredException) {
+                logout(sessionExpired = true)
             }
         }
     }

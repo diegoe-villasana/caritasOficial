@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -20,33 +22,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.template2025.model.Posada
+import com.example.template2025.model.Servicio // Import the real model
 import com.example.template2025.viewModel.AppViewModel
 import java.util.Locale
 
-private data class Servicio(
-    val id: Int,
-    val posadaId: Int,
-    val nombreSolicitante: String,
-    val nombreServicio: String,
-    val precio: Double,
-    val estado: String
-)
-
-private val sampleServices = listOf(
-    Servicio(1, 1, "Juan Perez", "Transporte", 150.00, "pendiente"),
-    Servicio(2, 1, "Maria Garcia", "Comida", 75.50, "sin pagar"),
-    Servicio(3, 2, "Carlos Lopez", "Lavandería", 50.00, "pendiente"),
-    Servicio(4, 1, "Ana Martinez", "Comida", 85.00, "pagado"), // This one will be filtered out
-    Servicio(5, 2, "Luis Hernandez", "Transporte", 25.00, "sin pagar")
-)
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class) // Added ExperimentalFoundationApi
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AdminServicesScreen(
     navController: NavController,
     vm: AppViewModel
 ) {
     val posadaState by vm.posadaState.collectAsState()
+    val reservaState by vm.reservaState.collectAsState()
+    val servicioState by vm.servicioState.collectAsState() // Use real state
+
     var selectedPosada by remember { mutableStateOf<Posada?>(null) }
     var selectedStatus by remember { mutableStateOf("Todos") }
     var isPosadaDropdownExpanded by remember { mutableStateOf(false) }
@@ -54,19 +43,21 @@ fun AdminServicesScreen(
 
     val statusOptions = listOf("Todos", "Pendiente", "Sin Pagar")
 
-    val filteredServices = remember(selectedPosada, selectedStatus) {
-        val activeServices = sampleServices.filter { !it.estado.equals("pagado", ignoreCase = true) }
-        val posadaFiltered = if (selectedPosada != null) {
-            activeServices.filter { it.posadaId == selectedPosada?.id }
-        } else {
-            emptyList()
+    val filteredServices = remember(servicioState.servicios, reservaState.reservas, selectedStatus) {
+        val reservationIdsForPosada = reservaState.reservas
+            .filter { it.posadaId == selectedPosada?.id }
+            .map { it.id }
+            .toSet()
+
+        val servicesForPosada = servicioState.servicios.filter { service ->
+            service.reservaId in reservationIdsForPosada
         }
 
         when (selectedStatus.lowercase()) {
-            "todos" -> posadaFiltered
-            "pendiente" -> posadaFiltered.filter { it.estado.equals("pendiente", ignoreCase = true) }
-            "sin pagar" -> posadaFiltered.filter { it.estado.equals("sin pagar", ignoreCase = true) }
-            else -> posadaFiltered
+            "todos" -> servicesForPosada
+            "pendiente" -> servicesForPosada.filter { it.estado.equals("pendiente", ignoreCase = true) }
+            "sin pagar" -> servicesForPosada.filter { it.estado.equals("sin pagar", ignoreCase = true) }
+            else -> servicesForPosada
         }
     }
 
@@ -76,6 +67,13 @@ fun AdminServicesScreen(
         }
     }
 
+    LaunchedEffect(selectedPosada, selectedStatus) {
+        selectedPosada?.let {
+            // We need both the reservations for the posada and all services to perform the link.
+            vm.getReservasByPosada(it.id)
+            vm.getServicios()
+        }
+    }
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
         Column(
             modifier = Modifier
@@ -86,10 +84,12 @@ fun AdminServicesScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Dropdown filters (this part remains the same)
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Posada Dropdown
                 ExposedDropdownMenuBox(
                     expanded = isPosadaDropdownExpanded,
                     onExpandedChange = { isPosadaDropdownExpanded = it }
@@ -117,6 +117,7 @@ fun AdminServicesScreen(
                         }
                     }
                 }
+                // Status Dropdown
                 ExposedDropdownMenuBox(
                     expanded = isStatusDropdownExpanded,
                     onExpandedChange = { isStatusDropdownExpanded = it }
@@ -148,7 +149,29 @@ fun AdminServicesScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Content based on state
             when {
+                servicioState.isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.padding(top = 40.dp))
+                }
+                servicioState.error != null -> {
+                    Column(
+                        modifier = Modifier.padding(top = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Error: ${servicioState.error}",
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        Button(onClick = { vm.getServicios() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Reintentar")
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("Reintentar")
+                        }
+                    }
+                }
                 selectedPosada == null -> {
                     Text("Por favor, seleccione una sede para ver los servicios.", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 40.dp))
                 }
@@ -161,7 +184,11 @@ fun AdminServicesScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(filteredServices, key = { it.id }) { servicio ->
-                            ServiceCard(servicio = servicio)
+                            ServiceCard(
+                                servicio = servicio,
+                                onAccept = { vm.acceptServicio(servicio.id) },
+                                onReject = { vm.rejectServicio(servicio.id) }
+                            )
                         }
                     }
                 }
@@ -171,7 +198,11 @@ fun AdminServicesScreen(
 }
 
 @Composable
-private fun ServiceCard(servicio: Servicio) {
+private fun ServiceCard(
+    servicio: Servicio,
+    onAccept: () -> Unit,
+    onReject: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -181,7 +212,7 @@ private fun ServiceCard(servicio: Servicio) {
         Column(modifier = Modifier.padding(12.dp)) {
             val (statusText, statusColor) = when {
                 servicio.estado.equals("pendiente", ignoreCase = true) -> "Pendiente" to Color(0xFFFBC02D)
-                servicio.estado.equals("sin pagar", ignoreCase = true) -> "Sin Pagar" to MaterialTheme.colorScheme.primary
+                servicio.estado.equals("sin pagar", ignoreCase = true) -> "Sin Pagar" to MaterialTheme.colorScheme.error
                 else -> servicio.estado.replaceFirstChar { it.uppercase() } to Color.Gray
             }
             Surface(
@@ -205,14 +236,14 @@ private fun ServiceCard(servicio: Servicio) {
             ) {
                 Text(servicio.nombreServicio, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    String.format(Locale.US, "$%.2f", servicio.precio),
+                    String.format(Locale.US, "$%.2f", calculateServicePrice(servicio.nombreServicio)),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Solicitante: ${servicio.nombreSolicitante}", style = MaterialTheme.typography.bodyMedium)
+            Text("Solicitante: John Doe", style = MaterialTheme.typography.bodyMedium)
 
             if (servicio.estado.equals("pendiente", ignoreCase = true)) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -223,14 +254,14 @@ private fun ServiceCard(servicio: Servicio) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = { /* TODO: Implement Accept action */ },
+                        onClick = onAccept,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text("Aceptar")
                     }
                     OutlinedButton(
-                        onClick = { /* TODO: Implement Reject action */ },
+                        onClick = onReject,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
@@ -242,3 +273,20 @@ private fun ServiceCard(servicio: Servicio) {
         }
     }
 }
+
+private fun calculateServicePrice(serviceName: String): Double {
+    val lowerCaseName = serviceName.lowercase()
+    return when {
+        lowerCaseName.contains("psicológica") -> 0.0
+        lowerCaseName.contains("dentista") -> 0.0
+        lowerCaseName.contains("documento") -> 5.0
+        lowerCaseName.contains("desayuno") -> 15.0
+        lowerCaseName.contains("comida") -> 15.0
+        lowerCaseName.contains("cena") -> 10.0
+        lowerCaseName.contains("lavandería") -> 10.0
+        lowerCaseName.contains("regadera") -> 10.0
+        lowerCaseName.contains("transporte") -> 20.0
+        else -> 0.0
+    }
+}
+

@@ -70,6 +70,20 @@ data class VoluntariosGetResponse(
     val data: List<Voluntario>
 )
 
+data class Servicio(
+    @SerializedName("id_servicio") val id: Int,
+    @SerializedName("reserva_id") val reservaId: Int,
+    @SerializedName("Nombre") val nombreSolicitante: String,
+    @SerializedName("nombre_servicio") val nombreServicio: String,
+    @SerializedName("estado") val estado: String
+)
+
+data class ServiciosGetResponse(
+    val success: Boolean,
+    @SerializedName("msg") val message: String,
+    val data: List<Servicio>
+)
+
 class AdminRepository {
     suspend fun login(user: String, password: String): Result<AdminLoginResponse> {
         return try {
@@ -327,4 +341,63 @@ class AdminRepository {
             Result.failure(Exception("No se pudo conectar al servidor. Revisa tu conexión a internet."))
         }
     }
+
+    suspend fun getServicios(): Result<List<Servicio>> {
+        return try {
+            val response = ApiClient.api.adminGetServicios()
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.data)
+            } else {
+                if (response.code() == 401) throw AdminSessionExpiredException("Sesión expirada")
+                val errorMsg = response.errorBody()?.string()?.let {
+                    Gson().fromJson(it, ErrorResponse::class.java).msg
+                } ?: "Error al obtener servicios."
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: AdminSessionExpiredException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(Exception("No se pudo conectar al servidor."))
+        }
+    }
+
+    suspend fun updateServicioEstado(servicioId: Int, nuevoEstado: String): Result<Unit> {
+        return try {
+            val request = UpdateEstadoRequest(estado = nuevoEstado)
+            val response = ApiClient.api.adminUpdateServicioEstado(servicioId, request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                if (response.code() == 401) throw AdminSessionExpiredException("Sesión expirada")
+                val errorMsg = response.errorBody()?.string()?.let {
+                    Gson().fromJson(it, ErrorResponse::class.java).msg
+                } ?: "Error al actualizar el estado del servicio."
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: AdminSessionExpiredException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(Exception("No se pudo conectar al servidor."))
+        }
+    }
+
+    suspend fun deleteServicio(servicioId: Int): Result<Unit> {
+        return try {
+            val response = ApiClient.api.adminDeleteServicio(servicioId)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                if (response.code() == 401) throw AdminSessionExpiredException("Sesión expirada")
+                val errorMsg = response.errorBody()?.string()?.let {
+                    Gson().fromJson(it, ErrorResponse::class.java).msg
+                } ?: "Error al eliminar el servicio."
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: AdminSessionExpiredException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(Exception("No se pudo conectar al servidor."))
+        }
+    }
+
 }

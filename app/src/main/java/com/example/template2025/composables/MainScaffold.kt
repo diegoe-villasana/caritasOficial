@@ -17,9 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.template2025.navigation.Route
-import com.example.template2025.screens.HomeScreen
-import com.example.template2025.screens.ProfileScreen
-import com.example.template2025.screens.SettingsScreen
+import com.example.template2025.screens.UserScreen
 import com.example.template2025.viewModel.AppViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -94,13 +92,13 @@ fun MainScaffold(
         ) { innerPadding ->
             NavHost(navController = nav, startDestination = Route.Home.route, modifier = Modifier.padding(innerPadding)) {
                 if (userType == "admin") {
-                    composable(Route.Home.route) { HomeScreen() }
-                    composable(Route.Profile.route) { ProfileScreen() }
-                    composable(Route.Settings.route) { SettingsScreen() }
+                    composable(Route.Home.route) { UserScreen(error = "") }
+                    composable(Route.Profile.route) { UserScreen(error = "") }
+                    composable(Route.Settings.route) { UserScreen(error = "") }
                 } else {
-                    composable(Route.Home.route) { HomeScreen() }
-                    composable(Route.Profile.route) { ProfileScreen() }
-                    composable(Route.Settings.route) { SettingsScreen() }
+                    composable(Route.Home.route) { UserScreen(error = "") }
+                    composable(Route.Profile.route) { UserScreen(error = "") }
+                    composable(Route.Settings.route) { UserScreen(error = "") }
                 }
             }
         }

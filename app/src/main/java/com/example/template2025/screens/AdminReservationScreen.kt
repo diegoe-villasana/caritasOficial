@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.template2025.components.Servicio
+import com.example.template2025.components.Servicios
 import com.example.template2025.model.Posada
 import com.example.template2025.model.Reserva
 import com.example.template2025.navigation.Route
@@ -35,31 +35,31 @@ import kotlin.text.contains
 
 
 private val sampleServices = listOf(
-    Servicio(
+    Servicios(
         "Transporte",
         "22 / Oct / 2025",
         "14:30",
         150.00
     ),
-    Servicio(
+    Servicios(
         "Comida",
         "22 / Oct / 2025",
         "20:00",
         75.50
     ),
-    Servicio(
+    Servicios(
         "Lavandería",
         "23 / Oct / 2025",
         "11:00",
         50.00
     ),
-    Servicio(
+    Servicios(
         "Comida",
         "23 / Oct / 2025",
         "12:30",
         85.00
     ),
-    Servicio(
+    Servicios(
         "Transporte",
         "24 / Oct / 2025",
         "09:00",

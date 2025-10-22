@@ -48,9 +48,7 @@ import com.example.template2025.screens.AdminLoginScreen
 import com.example.template2025.screens.ChatScreen
 import com.example.template2025.screens.CheckReservationScreen
 import com.example.template2025.screens.GuestScreen
-import com.example.template2025.screens.LoginScreen
 import com.example.template2025.screens.QRScreen
-import com.example.template2025.screens.RegisterScreen
 import com.example.template2025.screens.UserScreen
 import com.example.template2025.ui.theme.CaritasTheme
 import com.example.template2025.viewModel.AppViewModel
@@ -264,6 +262,7 @@ fun AuthNavHost(
             val personas = backStackEntry.arguments?.getString("personas")
             val fecha = backStackEntry.arguments?.getString("fecha")
             val telefono = backStackEntry.arguments?.getString("telefono")
+
             QRScreen(
                 navController = nav,
                 qrCodeUrl = qrCodeUrl,

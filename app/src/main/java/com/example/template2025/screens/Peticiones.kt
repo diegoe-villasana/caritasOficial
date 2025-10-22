@@ -25,7 +25,7 @@ interface BackendApi {
 }
 
 object Peticiones {
-    private const val BASE_URL = "http://10.0.2.2:25000/api/"
+    private const val BASE_URL = "https://back-end-caritas.onrender.com/api/"
 
 
     val api: BackendApi by lazy {

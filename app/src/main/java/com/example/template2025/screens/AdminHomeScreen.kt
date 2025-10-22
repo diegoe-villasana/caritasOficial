@@ -61,6 +61,7 @@ import com.example.template2025.viewModel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.text.Typography.registered
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +71,7 @@ fun AdminHomeScreen(
 ) {
     val posadaState by vm.posadaState.collectAsState()
     val reservaState by vm.reservaState.collectAsState()
+    val voluntarioState by vm.voluntarioState.collectAsState()
 
     var isDropdownExpanded by remember { mutableStateOf(false) }
     var selectedPosadaName by remember { mutableStateOf("Todos los albergues") }
@@ -82,10 +84,12 @@ fun AdminHomeScreen(
 
         if (selectedPosadaName == "Todos los albergues") {
             vm.getReservas()
+            vm.getVoluntarios()
         } else {
             val selectedPosada = posadaState.posadas.find { it.nombre == selectedPosadaName }
             selectedPosada?.let {
                 vm.getReservasByPosada(it.id)
+                vm.getVoluntarios()
             }
         }
     }
@@ -271,6 +275,9 @@ fun AdminHomeScreen(
                                     val pendingReservations = reservasForPosada.count { it.estado.equals("pendiente", ignoreCase = true) }
                                     val registeredReservations = reservasForPosada.count { it.estado.equals("checkin", ignoreCase = true) }
 
+                                    val pendingVoluntarios = voluntarioState.voluntarios.count { it.posadaId == posada.id && it.estado.equals("pendiente", ignoreCase = true) }
+                                    val registeredVoluntarios = voluntarioState.voluntarios.count { it.posadaId == posada.id && it.estado.equals("checkin", ignoreCase = true) }
+
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(16.dp)
                                     ) {
@@ -315,8 +322,8 @@ fun AdminHomeScreen(
                                         SummarySection(
                                             title = "Voluntarios",
                                             stats = listOf(
-                                                "Pendientes" to "0",
-                                                "Registrados" to "0"
+                                                "Pendientes" to pendingVoluntarios.toString(),
+                                                "Registrados" to registeredVoluntarios.toString()
                                             ),
                                             colors = listOf(pendingColor, primaryColor)
                                         )
@@ -329,11 +336,17 @@ fun AdminHomeScreen(
                             } else {
                                 val selectedPosada = posadaState.posadas.find { it.nombre == selectedPosadaName }
                                 selectedPosada?.let { posada ->
-                                    val reservasForPosada = reservaState.reservas.filter { it.posadaId == posada.id }
-                                    val pending = reservasForPosada.count { it.estado.equals("pendiente", ignoreCase = true) }
-                                    val registered = reservasForPosada.count { it.estado.equals("checkin", ignoreCase = true) }
-                                    val occupied = posada.capacidadTotal - posada.capacidadDisponible
-                                    val available = posada.capacidadDisponible - pending
+                                    val reservasForPosada = reservaState.reservas
+
+                                    val pendingPeople = reservasForPosada.filter { it.estado.equals("pendiente", ignoreCase = true) }.sumOf { it.totalPersonas }
+                                    val occupiedPeople = reservasForPosada.filter { it.estado.equals("checkin", ignoreCase = true) }.sumOf { it.totalPersonas }
+                                    val available = posada.capacidadTotal - occupiedPeople - pendingPeople
+
+                                    val pendingReservations = reservasForPosada.count { it.estado.equals("pendiente", ignoreCase = true) }
+                                    val registeredReservations = reservasForPosada.count { it.estado.equals("checkin", ignoreCase = true) }
+
+                                    val pendingVoluntarios = voluntarioState.voluntarios.count { it.posadaId == posada.id && it.estado.equals("pendiente", ignoreCase = true) }
+                                    val registeredVoluntarios = voluntarioState.voluntarios.count { it.posadaId == posada.id && it.estado.equals("checkin", ignoreCase = true) }
 
                                     Column(
                                         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -355,8 +368,8 @@ fun AdminHomeScreen(
                                         SummarySection(
                                             title = "Capacidad",
                                             stats = listOf(
-                                                "Ocupados" to occupied.toString(),
-                                                "Reservados" to pending.toString()
+                                                "Ocupados" to occupiedPeople.toString(),
+                                                "Reservados" to pendingPeople.toString()
                                             ),
                                             colors = listOf(occupiedColor, pendingColor)
                                         )
@@ -371,16 +384,16 @@ fun AdminHomeScreen(
                                         SummarySection(
                                             title = "Reservas",
                                             stats = listOf(
-                                                "Pendientes" to pending.toString(),
-                                                "Registradas" to registered.toString()
+                                                "Pendientes" to pendingReservations.toString(),
+                                                "Registradas" to registeredReservations.toString()
                                             ),
                                             colors = listOf(pendingColor, primaryColor)
                                         )
                                         SummarySection(
                                             title = "Voluntarios",
                                             stats = listOf(
-                                                "Pendientes" to "0",
-                                                "Registrados" to "0"
+                                                "Pendientes" to pendingVoluntarios.toString(),
+                                                "Registrados" to registeredVoluntarios.toString()
                                             ),
                                             colors = listOf(pendingColor, primaryColor)
                                         )

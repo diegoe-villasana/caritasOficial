@@ -56,9 +56,7 @@ data class Voluntario(
     @SerializedName("ID_Voluntario") val id: Int,
     @SerializedName("Num_Tel") val telefono: String,
     @SerializedName("estado") val estado: String,
-    // Note: 'nombre' is missing from the DB schema image, assuming it will be added to the API response.
-    // If not, you might need to adjust this. For now, I'll add a placeholder.
-    val nombre: String = "Nombre Apellido"
+    @SerializedName("posada_id") val posadaId: Int,
 )
 
 data class VoluntariosGetResponse(

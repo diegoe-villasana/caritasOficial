@@ -101,7 +101,7 @@ fun AdminReservationScreen(
         }
     }
 
-    LaunchedEffect(selectedPosada) {
+    LaunchedEffect(selectedPosada, selectedStatus) {
         selectedPosada?.let {
             vm.getReservasByPosada(it.id)
         }

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -29,22 +31,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.template2025.model.Posada
+import com.example.template2025.model.Voluntario
 import com.example.template2025.viewModel.AppViewModel
-
-private data class Voluntario(
-    val id: Int,
-    val posadaId: Int,
-    val nombre: String,
-    val telefono: String,
-    val estado: String
-)
-
-private val sampleVolunteers = listOf(
-    Voluntario(1, 1, "Elena Rodriguez", "+528112345678", "pendiente"),
-    Voluntario(2, 2, "Roberto Morales", "+528187654321", "pendiente"),
-    Voluntario(3, 1, "Sofia Castillo", "+528111223344", "checkin"),
-    Voluntario(4, 2, "Javier Nunez", "+528155667788", "checkout")
-)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -53,36 +41,41 @@ fun AdminVolunteersScreen(
     vm: AppViewModel
 ) {
     val posadaState by vm.posadaState.collectAsState()
+    val voluntarioState by vm.voluntarioState.collectAsState()
+
     var selectedPosada by remember { mutableStateOf<Posada?>(null) }
     var selectedStatus by remember { mutableStateOf("Todos") }
     var isPosadaDropdownExpanded by remember { mutableStateOf(false) }
     var isStatusDropdownExpanded by remember { mutableStateOf(false) }
 
-    val statusOptions = listOf("Todos", "Pendiente", "Check-in")
+    val statusOptions = listOf("Todos", "Pendiente", "Activo")
 
-    val filteredVolunteers = remember(selectedPosada, selectedStatus) {
-        val activeVolunteers = sampleVolunteers.filter { !it.estado.equals("checkout", ignoreCase = true) }
+    val filteredVolunteers = remember(voluntarioState.voluntarios, selectedPosada, selectedStatus) {
+        val activeVolunteers = voluntarioState.voluntarios.filter { !it.estado.equals("checkout", ignoreCase = true) }
+
         val posadaFiltered = if (selectedPosada != null) {
             activeVolunteers.filter { it.posadaId == selectedPosada?.id }
         } else {
+            // When no shelter is selected, show nothing.
             emptyList()
         }
 
         when (selectedStatus.lowercase()) {
             "todos" -> posadaFiltered
             "pendiente" -> posadaFiltered.filter { it.estado.equals("pendiente", ignoreCase = true) }
-            "check-in" -> posadaFiltered.filter { it.estado.equals("checkin", ignoreCase = true) }
+            "activo" -> posadaFiltered.filter { it.estado.equals("checkin", ignoreCase = true) }
             else -> posadaFiltered
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(selectedPosada, selectedStatus) {
         if (posadaState.posadas.isEmpty()) {
             vm.getPosadas()
         }
+
+        vm.getVoluntarios()
     }
 
-    // --- OVERSCROLL FIX WRAPPER ---
     CompositionLocalProvider(LocalOverscrollFactory provides null) {
         Column(
             modifier = Modifier
@@ -93,7 +86,6 @@ fun AdminVolunteersScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Dropdown Filters ---
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -161,6 +153,27 @@ fun AdminVolunteersScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             when {
+                voluntarioState.isLoading -> {
+                    CircularProgressIndicator(modifier = Modifier.padding(top = 40.dp))
+                }
+                voluntarioState.error != null -> {
+                    Column(
+                        modifier = Modifier.padding(top = 40.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Error: ${voluntarioState.error}",
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        Button(onClick = { vm.getVoluntarios() }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Reintentar")
+                            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                            Text("Reintentar")
+                        }
+                    }
+                }
                 selectedPosada == null -> {
                     Text("Por favor, seleccione una sede para ver los voluntarios.", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 40.dp))
                 }
@@ -168,12 +181,30 @@ fun AdminVolunteersScreen(
                     Text("No hay voluntarios que coincidan con los filtros.", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 40.dp))
                 }
                 else -> {
+                    val count = filteredVolunteers.size
+                    val label = if (count == 1) "voluntario" else "voluntarios"
+                    Text(
+                        text = "Mostrando $count $label",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        textAlign = TextAlign.Start
+                    )
+
                     LazyColumn(
                         contentPadding = PaddingValues(vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(filteredVolunteers, key = { it.id }) { voluntario ->
-                            VolunteerCard(voluntario = voluntario)
+                            VolunteerCard(voluntario = voluntario, onAccept = {
+                                selectedPosada?.let { posada ->
+                                    vm.acceptVoluntario(voluntario.id)
+                                }
+                            }, onReject = {
+                                vm.rejectVoluntario(voluntario.id)
+                            }, onFinalize = {
+                                vm.finalizeVoluntario(voluntario.id)
+                            })
                         }
                     }
                 }
@@ -183,7 +214,12 @@ fun AdminVolunteersScreen(
 }
 
 @Composable
-private fun VolunteerCard(voluntario: Voluntario) {
+private fun VolunteerCard(
+    voluntario: Voluntario,
+    onAccept: () -> Unit,
+    onReject: () -> Unit,
+    onFinalize: () -> Unit
+) {
     val uriHandler = LocalUriHandler.current
 
     Card(
@@ -213,10 +249,7 @@ private fun VolunteerCard(voluntario: Voluntario) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(voluntario.nombre, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-
-            val annotatedPhoneString = formatPhoneNumber(voluntario.telefono, "MX")
+            val annotatedPhoneString = formatPhoneNumber(voluntario.telefono, "MX") // Assuming MX for now
             var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
             Row(
@@ -237,13 +270,8 @@ private fun VolunteerCard(voluntario: Voluntario) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Teléfono: ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
-                )
-                Text(
                     text = annotatedPhoneString,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     onTextLayout = { result ->
                         textLayoutResult = result
                     }
@@ -258,14 +286,14 @@ private fun VolunteerCard(voluntario: Voluntario) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = { /* TODO: Accept action */ },
+                        onClick = onAccept,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text("Aceptar")
                     }
                     OutlinedButton(
-                        onClick = { /* TODO: Deny action */ },
+                        onClick = onReject,
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
@@ -278,12 +306,12 @@ private fun VolunteerCard(voluntario: Voluntario) {
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
-                    onClick = { /* TODO: Finalize action */ },
+                    onClick = onFinalize,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Finalizar")
+                    Text("Finalizar Voluntariado")
                 }
             }
         }
@@ -293,8 +321,7 @@ private fun VolunteerCard(voluntario: Voluntario) {
 @Composable
 private fun formatPhoneNumber(fullPhoneNumber: String, iso: String): AnnotatedString {
     val countryMap = mapOf(
-        "MX" to "+52", "US" to "+1", "ES" to "+34",
-        "CO" to "+57", "AR" to "+54", "PE" to "+51"
+        "MX" to "+52", "US" to "+1", "ES" to "+34","CO" to "+57", "AR" to "+54", "PE" to "+51"
     )
 
     val dialCode = countryMap[iso.uppercase()] ?: ""
@@ -312,6 +339,7 @@ private fun formatPhoneNumber(fullPhoneNumber: String, iso: String): AnnotatedSt
 
     val displayText = "$dialCode $formattedLocalNumber"
 
+
     return buildAnnotatedString {
         append(displayText)
         addStyle(
@@ -322,6 +350,7 @@ private fun formatPhoneNumber(fullPhoneNumber: String, iso: String): AnnotatedSt
             start = 0,
             end = displayText.length
         )
+
         addLink(
             url = LinkAnnotation.Url("tel:$fullPhoneNumber"),
             start = 0,

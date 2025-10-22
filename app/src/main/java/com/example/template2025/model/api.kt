@@ -70,6 +70,9 @@ interface BackendApi {
     @PUT("reservations/status/{qr_token}")
     suspend fun updateReservationStatus(@Path("qr_token") qrToken: String, @Body request: UpdateStatusRequest): Response<ErrorResponse>
 
+    @POST("voluntario/registro")
+    suspend fun registrarVoluntario(@Body request: VoluntarioRegistroRequest): Response<ErrorResponse>
+
     @GET("posadas/{id}/capacidad")
     suspend fun getCapacidadDisponible(
         @Path("id") posadaID: Int,
@@ -86,6 +89,7 @@ object ApiClient {
         appContext = context.applicationContext
     }
 
+    // No lanzamos en la creación; leemos el token de forma segura en cada petición.
     private val authInterceptor = Interceptor { chain ->
         val token = try {
             appContext?.let { ctx ->

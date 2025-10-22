@@ -20,6 +20,8 @@ import com.example.template2025.screens.AdminHomeScreen
 import com.example.template2025.screens.CameraPreviewScreen
 import com.example.template2025.screens.AdminReservationDetailScreen
 import com.example.template2025.screens.AdminReservationScreen
+import com.example.template2025.screens.AdminServicesScreen
+import com.example.template2025.screens.AdminVolunteersScreen
 import com.example.template2025.screens.SettingsScreen
 import com.example.template2025.viewModel.AppViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -39,7 +41,7 @@ fun AdminScaffold(
     val title = when (current) {
         Route.AdminHome.route -> "Panel de control"
         Route.AdminReservations.route -> "Reservaciones"
-        Route.AdminTransport.route -> "Transporte"
+        Route.AdminServices.route -> "Servicios"
         Route.AdminVolunteers.route -> "Voluntarios"
         else -> "Caritas MTY"
     }
@@ -55,7 +57,7 @@ fun AdminScaffold(
                 Text("Navegación", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
                 DrawerItem(nav, label = "Panel de control", dest = Route.AdminHome.route, drawerState, scope)
                 DrawerItem(nav, label = "Reservaciones", dest = Route.AdminReservations.route, drawerState, scope)
-                DrawerItem(nav, label = "Transporte", dest = Route.AdminTransport.route, drawerState, scope)
+                DrawerItem(nav, label = "Servicios", dest = Route.AdminServices.route, drawerState, scope)
                 DrawerItem(nav, label = "Voluntarios", dest = Route.AdminVolunteers.route, drawerState, scope)
                 DrawerItem(nav, label = "Escaner QR", dest = Route.QRScanner.route, drawerState, scope)
                 HorizontalDivider()
@@ -86,8 +88,8 @@ fun AdminScaffold(
             NavHost(navController = nav, startDestination = Route.AdminHome.route, modifier = Modifier.padding(innerPadding)) {
                 composable(Route.AdminHome.route) { AdminHomeScreen(vm, nav) }
                 composable(Route.AdminReservations.route) { AdminReservationScreen(nav, vm) }
-                composable(Route.AdminTransport.route) { SettingsScreen() }
-                composable(Route.AdminVolunteers.route) { SettingsScreen() }
+                composable(Route.AdminServices.route) { AdminServicesScreen(navController = nav, vm = vm) }
+                composable(Route.AdminVolunteers.route) { AdminVolunteersScreen(navController = nav, vm = vm) }
                 composable(
                     route = Route.AdminReservationsDetail.route,
                     arguments = listOf(navArgument("reservaId") { type = NavType.IntType })
@@ -115,14 +117,20 @@ private fun DrawerItem(
     drawerState: DrawerState,
     scope: CoroutineScope
 ) {
+    val topLevelRoutes = setOf(
+        Route.AdminHome.route,
+        Route.AdminReservations.route,
+        Route.AdminServices.route,
+        Route.AdminVolunteers.route
+    )
+
     NavigationDrawerItem(
         label = { Text(label) },
         selected = currentRoute(nav) == dest,
         onClick = {
             nav.navigate(dest) {
+                popUpTo(nav.graph.startDestinationId)
                 launchSingleTop = true
-                popUpTo(nav.graph.startDestinationId) {saveState = true}
-                restoreState = true
             }
             scope.launch { drawerState.close() }
         },

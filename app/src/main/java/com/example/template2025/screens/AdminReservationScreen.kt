@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.template2025.components.Servicio
 import com.example.template2025.model.Posada
 import com.example.template2025.model.Reserva
 import com.example.template2025.navigation.Route
@@ -30,6 +31,40 @@ import com.example.template2025.viewModel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.text.contains
+
+
+private val sampleServices = listOf(
+    Servicio(
+        "Transporte",
+        "22 / Oct / 2025",
+        "14:30",
+        150.00
+    ),
+    Servicio(
+        "Comida",
+        "22 / Oct / 2025",
+        "20:00",
+        75.50
+    ),
+    Servicio(
+        "Lavandería",
+        "23 / Oct / 2025",
+        "11:00",
+        50.00
+    ),
+    Servicio(
+        "Comida",
+        "23 / Oct / 2025",
+        "12:30",
+        85.00
+    ),
+    Servicio(
+        "Transporte",
+        "24 / Oct / 2025",
+        "09:00",
+        25.00
+    )
+)
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -164,7 +199,11 @@ fun AdminReservationScreen(
                 }
                 else -> {
                     Button(
-                        onClick = { /* TODO: Navigate to QR Scanner */ },
+                        onClick = {
+                            navController.navigate(Route.QRScanner.route) {
+                                popUpTo(Route.AdminReservations.route) { inclusive = true }
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp)
                     ) {
@@ -240,18 +279,56 @@ fun DetailedReservationCard(
                 CardInfoChip("Personas", reserva.totalPersonas.toString())
             }
 
-            // --- NEW: Conditionally add the Servicios WIP section ---
             if (!reserva.estado.equals("pendiente", ignoreCase = true)) {
                 Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
+                HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "Servicios (WIP)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Medium
-                )
+
+                val groupedServices = sampleServices.groupBy { it.nombre }
+                val totalServices = sampleServices.sumOf { it.precio }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    groupedServices.forEach { (serviceType, services) ->
+                        val count = services.size
+                        val subtotal = services.sumOf { it.precio }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "$serviceType (x$count)",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = String.format(Locale.US, "$%.2f", subtotal),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Total de Servicios",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = String.format(Locale.US, "$%.2f", totalServices),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
+
         }
     }
 }

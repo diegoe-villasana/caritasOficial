@@ -58,6 +58,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.set
 import androidx.core.graphics.createBitmap
+import com.example.template2025.screens.RegistroVoluntarioView
 import com.example.template2025.screens.MovableChatBubble
 
 import com.example.template2025.screens.reservas
@@ -117,7 +118,6 @@ import com.example.template2025.screens.reservas
 
 
 
-
 @Composable
 fun AppRoot(modifier: Modifier = Modifier) {
     val vm: AppViewModel = viewModel()
@@ -142,6 +142,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
             )
         }
 
+        // AUTH FLOW
         composable(Route.Auth.route) {
             AuthNavHost(
                 vm = vm,
@@ -166,7 +167,7 @@ fun AppRoot(modifier: Modifier = Modifier) {
             )
         }
 
-
+        // MAIN FLOW
         composable(Route.GuestMain.route) {
             MainScaffold(
                 vm = vm,
@@ -211,8 +212,17 @@ fun AuthNavHost(
                 onAdminClick = {
                     onErrorDismiss()
                     nav.navigate(Route.AdminLogin.route)
+                },
+                onVolunteerClick = {
+                    onErrorDismiss()
+                    nav.navigate(Route.RegistroVoluntariado.route)
                 }
             )
+        }
+
+        composable(Route.RegistroVoluntariado.route) {
+            // al registrar con éxito vuelve a la pantalla anterior (UserScreen)
+            RegistroVoluntarioView(onRegistered = { nav.popBackStack() })
         }
 
         composable(Route.AdminLogin.route) {
@@ -263,7 +273,7 @@ fun AuthNavHost(
                 phone = telefono
             )
         }
-        
+
         composable(Route.Servicios.route) {
             reservas(navController = nav)
         }

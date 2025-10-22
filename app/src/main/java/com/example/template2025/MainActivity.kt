@@ -222,7 +222,7 @@ fun AuthNavHost(
 
         composable(Route.RegistroVoluntariado.route) {
             // al registrar con éxito vuelve a la pantalla anterior (UserScreen)
-            RegistroVoluntarioView(onRegistered = { nav.popBackStack() })
+            RegistroVoluntarioView(onRegistered = { nav.popBackStack() }, onBack = {nav.popBackStack()})
         }
 
         composable(Route.AdminLogin.route) {

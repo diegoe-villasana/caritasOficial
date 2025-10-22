@@ -58,6 +58,9 @@ interface BackendApi {
     @PUT("reservations/status/{qr_token}")
     suspend fun updateReservationStatus(@Path("qr_token") qrToken: String, @Body request: UpdateStatusRequest): Response<ErrorResponse>
 
+    @POST("voluntario/registro")
+    suspend fun registrarVoluntario(@Body request: VoluntarioRegistroRequest): Response<ErrorResponse>
+
 }
 
 object ApiClient {

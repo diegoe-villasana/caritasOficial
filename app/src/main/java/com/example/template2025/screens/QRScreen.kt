@@ -146,14 +146,6 @@ fun QRScreen(
             }
             Spacer(modifier = Modifier.height(24.dp)) // Un espacio para separar
 
-            Button(
-                onClick = {
-                    navController.navigate(Route.Servicios.route)
-                }
-            ) {
-                Text("Ver mis Servicios")
-            }
-
             Spacer(modifier = Modifier.height(32.dp))
         }
         IconButton(

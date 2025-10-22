@@ -69,9 +69,7 @@ fun CheckReservationScreen(
                         }
                     }
                     "checkin" -> {
-                        navController.navigate(Route.Services.route) {
-                            popUpTo(Route.GuestLogin.route) { inclusive = true }
-                        }
+                        navController.navigate(Route.Servicios.route)
                     }
                 }
             }

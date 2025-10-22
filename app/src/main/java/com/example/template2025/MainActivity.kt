@@ -58,6 +58,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import androidx.core.graphics.set
 import androidx.core.graphics.createBitmap
+import com.example.template2025.screens.MovableChatBubble
 
 import com.example.template2025.screens.reservas
 
@@ -101,32 +102,19 @@ import com.example.template2025.screens.reservas
          enableEdgeToEdge()
          setContent {
              CaritasTheme {
-                 val context = LocalContext.current
                  Scaffold(
                      modifier = Modifier.fillMaxSize(),
-                     floatingActionButton = {
-                         FloatingActionButton(
-                             onClick = {
-                                 context.startActivity(
-                                     Intent(context, ChatActivity::class.java)
-                                 )
-                             }
-                         ) {
-                             Icon(
-                                 imageVector = Icons.Default.Chat, // o tu ícono
-                                 contentDescription = "Chat"
-                             )
-                         }
-                     }
                  ) { innerPadding ->
-                     AppRoot(
-                         modifier = Modifier.padding(innerPadding)
-                     )
+                     Box(Modifier.fillMaxSize().padding(innerPadding)) {
+                         AppRoot(modifier = Modifier.matchParentSize())
+                         MovableChatBubble()
+                     }
                  }
              }
          }
      }
  }
+
 
 
 
